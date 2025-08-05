@@ -86,8 +86,8 @@
 <body>
   <div class="booking-form text-center">
     <img src="https://lh3.googleusercontent.com/a-/ALV-UjUTAoSFAR5OUMj0ZCkgLF1RMYoE-Q85G0HPftaFEBBIjjzw9cQ=s265-w265-h265" alt="Slide Guys Logo" class="logo">
-    <h2 class="mb-3">Slide Guys Booking</h2>
-    <p>Select a unit and the date you would like to reserve. Deliveries within 10 miles of Richfield are free. All other outlying areas are available with a Travel Fee.(To be discussed at time of Booking). No cancellations. Rescheduling is subject to availability. A $50 deposit per unit is due at time of reservation. A team member will contact you shortly after confirmation. We accept cash, check, venmo, cash app, and pay-pal.</p>
+    <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
+    <p>Select your graphic and location.</p>
 
     <form id="bookingForm">
       <input type="text" id="name" class="form-control mb-2" placeholder="Full Name" required />
@@ -110,7 +110,7 @@
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
-      Booking successful!<br>Email Sent!
+      purchase successful!<br>Email Sent!
     </div>
     <div id="errorMessage" class="mt-3 text-danger" style="display:none;">
       That unit is already booked on this date.
@@ -126,7 +126,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script>
     (function () {
-      emailjs.init("PXm_wNk9aIao8Hlpp");
+      emailjs.init("3Uw1krJxmrVWmbbln");
     })();
   </script>
 
@@ -196,7 +196,7 @@
         const date = document.getElementById('date').value;
 
         if (!unitName || !date) {
-          alert('Please select a unit and a date before adding to cart.');
+          alert('Please select graphic and location.');
           return;
         }
 
@@ -234,7 +234,7 @@
         const city = document.getElementById('city').value.trim();
 
         if (cart.length === 0) {
-          alert('Your cart is empty. Please add at least one booking.');
+          alert('Your cart is empty. Please add at least one item.');
           return;
         }
 
