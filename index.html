@@ -112,9 +112,6 @@
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
       purchase successful!<br>Email Sent!
     </div>
-    <div id="errorMessage" class="mt-3 text-danger" style="display:none;">
-      That unit is already booked on this date.
-    </div>
 
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
@@ -132,24 +129,6 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const allowedStart = new Date(`${currentYear}-01-01`);
-      const allowedEnd = new Date(`${currentYear}-12-31`);
-      const dateInput = document.getElementById('date');
-
-      const minDate = today > allowedStart ? today : allowedStart;
-      dateInput.setAttribute('min', minDate.toISOString().split('T')[0]);
-      dateInput.setAttribute('max', allowedEnd.toISOString().split('T')[0]);
-
-      dateInput.addEventListener('change', () => {
-        const selected = new Date(dateInput.value);
-        if (selected.getFullYear() !== currentYear) {
-          alert("You may only book dates within this year. Bookings for next year open January 1st.");
-          dateInput.value = '';
-        }
-      });
-
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -197,12 +176,6 @@
 
         if (!unitName || !date) {
           alert('Please select graphic and location.');
-          return;
-        }
-
-        const isDuplicate = cart.some(item => item.unitName === unitName && item.date === date);
-        if (isDuplicate) {
-          alert('This unit and date combination is already in your cart.');
           return;
         }
 
@@ -256,17 +229,6 @@
 
           const unitId = unitData.id;
 
-          const { data: existing, error: checkError } = await supabase
-            .from('bookings')
-            .select('*')
-            .eq('unit', unitId)
-            .eq('date', date);
-
-          if (existing && existing.length > 0) {
-            allSuccessful = false;
-            continue;
-          }
-
           const { error: insertError } = await supabase.from('bookings').insert([
             { name, phone, email, address, city, unit: unitId, date }
           ]);
@@ -282,15 +244,11 @@
 
         if (allSuccessful) {
           document.getElementById('successMessage').style.display = 'block';
-          document.getElementById('errorMessage').style.display = 'none';
           document.getElementById('bookingForm').reset();
           document.getElementById('unitDisplay').textContent = 'Select a unit';
           cart.length = 0;
           document.getElementById('cartList').innerHTML = '';
           document.getElementById('cartSection').style.display = 'none';
-        } else {
-          document.getElementById('successMessage').style.display = 'none';
-          document.getElementById('errorMessage').style.display = 'block';
         }
       });
     });
