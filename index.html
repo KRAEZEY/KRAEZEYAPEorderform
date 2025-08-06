@@ -229,7 +229,7 @@
 
           const unitId = unitData.id;
 
-          const { error: insertError } = await supabase.from('bookings').insert([
+          const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
             { name, phone, email, address, city, unit: unitId, date }
           ]);
 
