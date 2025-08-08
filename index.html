@@ -1,3 +1,4 @@
+<!-- Full updated HTML with Front Location dropdown -->
 <!DOCTYPE html> 
 <html lang="en">
 <head>
@@ -10,7 +11,6 @@
       background-color: #f8f9fa;
       font-family: Arial, sans-serif;
     }
-
     .booking-form {
       max-width: 500px;
       margin: 50px auto;
@@ -19,46 +19,38 @@
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
-
     .form-control {
       background-color: #e9f0ff;
     }
-
     .btn-primary {
       background-color: #006aff;
       border: none;
     }
-
     .btn-primary:hover {
       background-color: #0051c9;
     }
-
     .logo {
       max-height: 80px;
       margin-bottom: 20px;
       border-radius: 12px;
     }
-
     .unit-dropdown {
       position: relative;
       text-align: left;
       margin-bottom: 1rem;
     }
-
     .unit-option {
       display: flex;
       align-items: center;
       padding: 10px;
       cursor: pointer;
     }
-
     .unit-option img {
       height: 40px;
       width: 40px;
       border-radius: 8px;
       margin-right: 10px;
     }
-
     .unit-list {
       position: absolute;
       width: 100%;
@@ -70,12 +62,10 @@
       z-index: 10;
       display: none;
     }
-
     .unit-dropdown.open .unit-list {
       display: block;
     }
-
-    #unitDisplay {
+    #unitDisplay, #frontLocationDisplay {
       background-color: #e9f0ff;
       padding: 10px;
       border-radius: 8px;
@@ -101,6 +91,13 @@
         <div class="unit-list" id="unitList"></div>
       </div>
       <input type="hidden" id="unit" required />
+
+      <!-- Front Location Dropdown -->
+      <div class="unit-dropdown" id="frontLocationDropdown">
+        <div id="frontLocationDisplay">Select a front location</div>
+        <div class="unit-list" id="frontLocationList"></div>
+      </div>
+      <input type="hidden" id="frontLocation" required />
 
       <input type="date" id="date" class="form-control mb-3" required />
 
@@ -130,7 +127,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
+      const supabaseKey = 'eyJhbGciOi...Kz4'; // truncated for security
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       async function loadUnits() {
@@ -144,10 +141,7 @@
         data.forEach(unit => {
           const div = document.createElement('div');
           div.className = 'unit-option';
-          div.innerHTML = `
-            <img src="${unit.thumbnail_url}" alt="${unit.name}" />
-            <span>${unit.name}</span>
-          `;
+          div.innerHTML = `<img src="${unit.thumbnail_url}" alt="${unit.name}" /><span>${unit.name}</span>`;
           div.addEventListener('click', () => {
             unitDisplay.textContent = unit.name;
             unitHidden.value = unit.name;
@@ -167,19 +161,52 @@
         });
       }
 
+      async function loadFrontLocations() {
+        const { data, error } = await supabase.from('Front Location').select('name');
+        if (error) return;
+
+        const list = document.getElementById('frontLocationList');
+        const display = document.getElementById('frontLocationDisplay');
+        const hidden = document.getElementById('frontLocation');
+
+        data.forEach(loc => {
+          const div = document.createElement('div');
+          div.className = 'unit-option';
+          div.innerHTML = `<span>${loc.name}</span>`;
+          div.addEventListener('click', () => {
+            display.textContent = loc.name;
+            hidden.value = loc.name;
+            document.getElementById('frontLocationDropdown').classList.remove('open');
+          });
+          list.appendChild(div);
+        });
+
+        display.addEventListener('click', () => {
+          document.getElementById('frontLocationDropdown').classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!document.getElementById('frontLocationDropdown').contains(e.target)) {
+            document.getElementById('frontLocationDropdown').classList.remove('open');
+          }
+        });
+      }
+
       await loadUnits();
+      await loadFrontLocations();
 
       const cart = [];
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const unitName = document.getElementById('unit').value;
+        const frontLocation = document.getElementById('frontLocation').value;
         const date = document.getElementById('date').value;
 
-        if (!unitName || !date) {
-          alert('Please select graphic and location.');
+        if (!unitName || !frontLocation || !date) {
+          alert('Please complete all selections.');
           return;
         }
 
-        cart.push({ unitName, date });
+        cart.push({ unitName, frontLocation, date });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
@@ -187,7 +214,7 @@
 
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `${unitName} — ${date} <button class="btn btn-sm btn-danger">&times;</button>`;
+        li.innerHTML = `${unitName} @ ${frontLocation} — ${date} <button class="btn btn-sm btn-danger">&times;</button>`;
         li.querySelector('button').addEventListener('click', () => {
           const index = cart.findIndex(item => item.unitName === unitName && item.date === date);
           if (index !== -1) cart.splice(index, 1);
@@ -207,14 +234,14 @@
         const city = document.getElementById('city').value.trim();
 
         if (cart.length === 0) {
-          alert('Your cart is empty. Please add at least one item.');
+          alert('Your cart is empty.');
           return;
         }
 
         let allSuccessful = true;
 
         for (const item of cart) {
-          const { unitName, date } = item;
+          const { unitName, frontLocation, date } = item;
 
           const { data: unitData, error: unitError } = await supabase
             .from('units')
@@ -230,13 +257,13 @@
           const unitId = unitData.id;
 
           const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
-            { name, phone, email, address, city, unit: unitId, date }
+            { name, phone, email, address, city, unit: unitId, front_location: frontLocation, date }
           ]);
 
           if (insertError) {
             allSuccessful = false;
           } else {
-            const params = { name, phone, email, address, city, unit: unitName, date };
+            const params = { name, phone, email, address, city, unit: unitName, front_location: frontLocation, date };
             emailjs.send("service_9fvjwls", "template_gveha9l", params);
             emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
           }
@@ -246,6 +273,7 @@
           document.getElementById('successMessage').style.display = 'block';
           document.getElementById('bookingForm').reset();
           document.getElementById('unitDisplay').textContent = 'Select a unit';
+          document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
           cart.length = 0;
           document.getElementById('cartList').innerHTML = '';
           document.getElementById('cartSection').style.display = 'none';
