@@ -326,7 +326,7 @@
           if (insertError) {
             allSuccessful = false;
           } else {
-            const params = { name, phone, email, address, city, front_graphic: frontGraphic, front_location: frontLocation, back_location: backLocation, back_graphic: backGraphic };
+            const params = { name, phone, email, address, city, unit: unit, front_location: frontLocation, back_location: backLocation, back_graphic: backGraphic };
             emailjs.send("service_9fvjwls", "template_gveha9l", params);
             emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
           }
