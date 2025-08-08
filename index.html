@@ -64,7 +64,6 @@
     .unit-dropdown.open .unit-list {
       display: block;
     }
-    /* removed #unitDisplay */
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
       background-color: #e9f0ff;
       padding: 10px;
@@ -92,7 +91,7 @@
       </div>
       <input type="hidden" id="frontLocation" required />
 
-      <!-- REMOVED: unit dropdown + hidden input -->
+      <!-- (Units dropdown removed) -->
 
       <div class="unit-dropdown" id="backLocationDropdown">
         <div id="backLocationDisplay">Select a back location</div>
@@ -141,8 +140,6 @@
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-      /* REMOVED loadUnits() and any calls to it */
 
       async function loadFrontLocations() {
         const { data, error } = await supabase.from('Front Location').select('name, thumbnail_url');
@@ -204,7 +201,7 @@
         const list = document.getElementById('backGraphicList');
         const display = document.getElementById('backGraphicDisplay');
         const hidden = document.getElementById('backGraphic');
-        data.forEach item => {
+        data.forEach(item => {  /* <-- fixed parentheses here */
           const div = document.createElement('div');
           div.className = 'unit-option';
           div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
@@ -260,7 +257,6 @@
 
       const cart = [];
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        /* removed unitName */
         const frontLocation = document.getElementById('frontLocation').value;
         const backLocation = document.getElementById('backLocation').value;
         const backGraphic = document.getElementById('backGraphic').value;
@@ -313,8 +309,6 @@
         for (const item of cart) {
           const { frontLocation, backLocation, backGraphic, frontGraphic } = item;
 
-          /* removed lookup of unit in Graphic Front */
-
           const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
             { 
               name, phone, email, address, city, 
@@ -343,7 +337,6 @@
         if (allSuccessful) {
           document.getElementById('successMessage').style.display = 'block';
           document.getElementById('bookingForm').reset();
-          /* removed unitDisplay reset */
           document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
           document.getElementById('backLocationDisplay').textContent = 'Select a back location';
           document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
