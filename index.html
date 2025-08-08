@@ -64,7 +64,8 @@
     .unit-dropdown.open .unit-list {
       display: block;
     }
-    #unitDisplay, #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
+    /* removed #unitDisplay */
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
       background-color: #e9f0ff;
       padding: 10px;
       border-radius: 8px;
@@ -91,11 +92,7 @@
       </div>
       <input type="hidden" id="frontLocation" required />
 
-      <div class="unit-dropdown" id="frontGraphicDropdown">
-        <div id="frontGraphicDisplay">Select a front graphic</div>
-        <div class="unit-list" id="frontGraphicList"></div>
-      </div>
-      <input type="hidden" id="frontGraphic" />
+      <!-- REMOVED: unit dropdown + hidden input -->
 
       <div class="unit-dropdown" id="backLocationDropdown">
         <div id="backLocationDisplay">Select a back location</div>
@@ -109,6 +106,13 @@
         <div class="unit-list" id="backGraphicList"></div>
       </div>
       <input type="hidden" id="backGraphic" required />
+
+      <!-- Front Graphic Dropdown (separate) -->
+      <div class="unit-dropdown" id="frontGraphicDropdown">
+        <div id="frontGraphicDisplay">Select a front graphic</div>
+        <div class="unit-list" id="frontGraphicList"></div>
+      </div>
+      <input type="hidden" id="frontGraphic" />
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
@@ -138,32 +142,7 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      async function loadUnits() {
-        const { data, error } = await supabase.from('Graphic Front').select('id, name, thumbnail_url');
-        if (error) return;
-        const unitList = document.getElementById('unitList');
-        const unitDisplay = document.getElementById('unitDisplay');
-        const unitHidden = document.getElementById('unit');
-        data.forEach(unit => {
-          const div = document.createElement('div');
-          div.className = 'unit-option';
-          div.innerHTML = `<img src="${unit.thumbnail_url}" alt="${unit.name}" /><span>${unit.name}</span>`;
-          div.addEventListener('click', () => {
-            unitDisplay.textContent = unit.name;
-            unitHidden.value = unit.name;
-            document.getElementById('unitDropdown').classList.remove('open');
-          });
-          unitList.appendChild(div);
-        });
-        unitDisplay.addEventListener('click', () => {
-          document.getElementById('unitDropdown').classList.toggle('open');
-        });
-        document.addEventListener('click', (e) => {
-          if (!document.getElementById('unitDropdown').contains(e.target)) {
-            document.getElementById('unitDropdown').classList.remove('open');
-          }
-        });
-      }
+      /* REMOVED loadUnits() and any calls to it */
 
       async function loadFrontLocations() {
         const { data, error } = await supabase.from('Front Location').select('name, thumbnail_url');
@@ -225,7 +204,7 @@
         const list = document.getElementById('backGraphicList');
         const display = document.getElementById('backGraphicDisplay');
         const hidden = document.getElementById('backGraphic');
-        data.forEach(item => {
+        data.forEach item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
           div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
@@ -246,7 +225,7 @@
         });
       }
 
-      // Front Graphics (existing separate dropdown)
+      // Front Graphics (separate dropdown that stays)
       async function loadFrontGraphicsExtra() {
         const { data, error } = await supabase.from('Graphic Front').select('name, thumbnail_url');
         if (error) return;
@@ -274,7 +253,6 @@
         });
       }
 
-      await loadUnits();
       await loadFrontLocations();
       await loadBackLocations();
       await loadBackGraphics();
@@ -282,18 +260,18 @@
 
       const cart = [];
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        const unitName = document.getElementById('unit').value;               // Front Graphic from main dropdown
+        /* removed unitName */
         const frontLocation = document.getElementById('frontLocation').value;
         const backLocation = document.getElementById('backLocation').value;
         const backGraphic = document.getElementById('backGraphic').value;
-        const frontGraphic = document.getElementById('frontGraphic').value;   // NEW: extra front graphic dropdown
+        const frontGraphic = document.getElementById('frontGraphic').value;
 
-        if (!unitName || !frontLocation || !backLocation || !backGraphic || !frontGraphic) {
+        if (!frontLocation || !backLocation || !backGraphic || !frontGraphic) {
           alert('Please complete all selections.');
           return;
         }
 
-        cart.push({ unitName, frontLocation, backLocation, backGraphic, frontGraphic });
+        cart.push({ frontLocation, backLocation, backGraphic, frontGraphic });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
@@ -301,10 +279,9 @@
 
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `${unitName} @ ${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} <button class="btn btn-sm btn-danger">&times;</button>`;
+        li.innerHTML = `${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} <button class="btn btn-sm btn-danger">&times;</button>`;
         li.querySelector('button').addEventListener('click', () => {
           const index = cart.findIndex(item =>
-            item.unitName === unitName &&
             item.frontLocation === frontLocation &&
             item.backLocation === backLocation &&
             item.backGraphic === backGraphic &&
@@ -334,29 +311,17 @@
         let allSuccessful = true;
 
         for (const item of cart) {
-          const { unitName, frontLocation, backLocation, backGraphic, frontGraphic } = item;
+          const { frontLocation, backLocation, backGraphic, frontGraphic } = item;
 
-          const { data: unitData, error: unitError } = await supabase
-            .from('Graphic Front')
-            .select('id')
-            .eq('name', unitName)
-            .single();
-
-          if (unitError || !unitData) {
-            allSuccessful = false;
-            continue;
-          }
-
-          const unitId = unitData.id;
+          /* removed lookup of unit in Graphic Front */
 
           const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
             { 
               name, phone, email, address, city, 
-              unit: unitId, 
               front_location: frontLocation, 
               back_location: backLocation, 
               back_graphic: backGraphic,
-              front_graphic: frontGraphic          /* NEW */
+              front_graphic: frontGraphic
             }
           ]);
 
@@ -365,11 +330,10 @@
           } else {
             const params = { 
               name, phone, email, address, city, 
-              unit: unitName, 
               front_location: frontLocation, 
               back_location: backLocation, 
               back_graphic: backGraphic,
-              front_graphic: frontGraphic          /* NEW */
+              front_graphic: frontGraphic
             };
             emailjs.send("service_9fvjwls", "template_gveha9l", params);
             emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
@@ -379,7 +343,7 @@
         if (allSuccessful) {
           document.getElementById('successMessage').style.display = 'block';
           document.getElementById('bookingForm').reset();
-          document.getElementById('unitDisplay').textContent = 'Select a front Graphic';
+          /* removed unitDisplay reset */
           document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
           document.getElementById('backLocationDisplay').textContent = 'Select a back location';
           document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
