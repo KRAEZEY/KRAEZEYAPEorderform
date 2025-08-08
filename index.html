@@ -64,7 +64,7 @@
     .unit-dropdown.open .unit-list {
       display: block;
     }
-    #unitDisplay, #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay {
+    #unitDisplay, #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
       background-color: #e9f0ff;
       padding: 10px;
       border-radius: 8px;
@@ -109,6 +109,13 @@
         <div class="unit-list" id="backGraphicList"></div>
       </div>
       <input type="hidden" id="backGraphic" required />
+
+      <!-- Front Graphic Dropdown (already added) -->
+      <div class="unit-dropdown" id="frontGraphicDropdown">
+        <div id="frontGraphicDisplay">Select a front graphic</div>
+        <div class="unit-list" id="frontGraphicList"></div>
+      </div>
+      <input type="hidden" id="frontGraphic" />
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
@@ -219,132 +226,8 @@
         });
       }
 
-      // Back Graphics
       async function loadBackGraphics() {
         const { data, error } = await supabase.from('Graphic Back').select('name, thumbnail_url');
         if (error) return;
         const list = document.getElementById('backGraphicList');
-        const display = document.getElementById('backGraphicDisplay');
-        const hidden = document.getElementById('backGraphic');
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'unit-option';
-          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
-          div.addEventListener('click', () => {
-            display.textContent = item.name;
-            hidden.value = item.name;
-            document.getElementById('backGraphicDropdown').classList.remove('open');
-          });
-          list.appendChild(div);
-        });
-        display.addEventListener('click', () => {
-          document.getElementById('backGraphicDropdown').classList.toggle('open');
-        });
-        document.addEventListener('click', (e) => {
-          if (!document.getElementById('backGraphicDropdown').contains(e.target)) {
-            document.getElementById('backGraphicDropdown').classList.remove('open');
-          }
-        });
-      }
-
-      await loadUnits();
-      await loadFrontLocations();
-      await loadBackLocations();
-      await loadBackGraphics();
-
-      const cart = [];
-      document.getElementById('addToCartBtn').addEventListener('click', () => {
-        const unitName = document.getElementById('unit').value;
-        const frontLocation = document.getElementById('frontLocation').value;
-        const backLocation = document.getElementById('backLocation').value;
-        const backGraphic = document.getElementById('backGraphic').value;
-
-        if (!unitName || !frontLocation || !backLocation || !backGraphic) {
-          alert('Please complete all selections.');
-          return;
-        }
-
-        cart.push({ unitName, frontLocation, backLocation, backGraphic });
-
-        const cartSection = document.getElementById('cartSection');
-        const cartList = document.getElementById('cartList');
-        cartSection.style.display = 'block';
-
-        const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `${unitName} @ ${frontLocation} / ${backLocation} — ${backGraphic} <button class="btn btn-sm btn-danger">&times;</button>`;
-        li.querySelector('button').addEventListener('click', () => {
-          const index = cart.findIndex(item =>
-            item.unitName === unitName &&
-            item.frontLocation === frontLocation &&
-            item.backLocation === backLocation &&
-            item.backGraphic === backGraphic
-          );
-          if (index !== -1) cart.splice(index, 1);
-          li.remove();
-          if (cart.length === 0) cartSection.style.display = 'none';
-        });
-        cartList.appendChild(li);
-      });
-
-      document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const name = document.getElementById('name').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const address = document.getElementById('address').value.trim();
-        const city = document.getElementById('city').value.trim();
-
-        if (cart.length === 0) {
-          alert('Your cart is empty.');
-          return;
-        }
-
-        let allSuccessful = true;
-
-        for (const item of cart) {
-          const { unitName, frontLocation, backLocation, backGraphic } = item;
-
-          const { data: unitData, error: unitError } = await supabase
-            .from('Graphic Front')
-            .select('id')
-            .eq('name', unitName)
-            .single();
-
-          if (unitError || !unitData) {
-            allSuccessful = false;
-            continue;
-          }
-
-          const unitId = unitData.id;
-
-          const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
-            { name, phone, email, address, city, unit: unitId, front_location: frontLocation, back_location: backLocation, back_graphic: backGraphic }
-          ]);
-
-          if (insertError) {
-            allSuccessful = false;
-          } else {
-            const params = { name, phone, email, address, city, unit: unitName, front_location: frontLocation, back_location: backLocation, back_graphic: backGraphic };
-            emailjs.send("service_9fvjwls", "template_gveha9l", params);
-            emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
-          }
-        }
-
-        if (allSuccessful) {
-          document.getElementById('successMessage').style.display = 'block';
-          document.getElementById('bookingForm').reset();
-          document.getElementById('unitDisplay').textContent = 'Select a unit';
-          document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
-          document.getElementById('backLocationDisplay').textContent = 'Select a back location';
-          document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
-          cart.length = 0;
-          document.getElementById('cartList').innerHTML = '';
-          document.getElementById('cartSection').style.display = 'none';
-        }
-      });
-    });
-  </script>
-</body>
-</html>
+        const
