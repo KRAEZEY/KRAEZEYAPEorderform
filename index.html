@@ -1,4 +1,3 @@
-<!-- Full updated HTML with Front Location dropdown -->
 <!DOCTYPE html> 
 <html lang="en">
 <head>
@@ -65,7 +64,7 @@
     .unit-dropdown.open .unit-list {
       display: block;
     }
-    #unitDisplay, #frontLocationDisplay {
+    #unitDisplay, #frontLocationDisplay, #backLocationDisplay {
       background-color: #e9f0ff;
       padding: 10px;
       border-radius: 8px;
@@ -107,7 +106,6 @@
       <input type="date" id="date" class="form-control mb-3" required />
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
 
@@ -132,7 +130,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
+      const supabaseKey = 'eyJhbGciOi...'; // your real key here
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       async function loadUnits() {
@@ -167,7 +165,7 @@
       }
 
       async function loadFrontLocations() {
-        const { data, error } = await supabase.from('Front Location').select('name');
+        const { data, error } = await supabase.from('Front Location').select('name, thumbnail_url');
         if (error) return;
 
         const list = document.getElementById('frontLocationList');
@@ -177,7 +175,7 @@
         data.forEach(loc => {
           const div = document.createElement('div');
           div.className = 'unit-option';
-          div.innerHTML = `<span>${loc.name}</span>`;
+          div.innerHTML = `<img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>`;
           div.addEventListener('click', () => {
             display.textContent = loc.name;
             hidden.value = loc.name;
@@ -197,21 +195,54 @@
         });
       }
 
+      async function loadBackLocations() {
+        const { data, error } = await supabase.from('Back Location').select('name, thumbnail_url');
+        if (error) return;
+
+        const list = document.getElementById('backLocationList');
+        const display = document.getElementById('backLocationDisplay');
+        const hidden = document.getElementById('backLocation');
+
+        data.forEach(loc => {
+          const div = document.createElement('div');
+          div.className = 'unit-option';
+          div.innerHTML = `<img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>`;
+          div.addEventListener('click', () => {
+            display.textContent = loc.name;
+            hidden.value = loc.name;
+            document.getElementById('backLocationDropdown').classList.remove('open');
+          });
+          list.appendChild(div);
+        });
+
+        display.addEventListener('click', () => {
+          document.getElementById('backLocationDropdown').classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!document.getElementById('backLocationDropdown').contains(e.target)) {
+            document.getElementById('backLocationDropdown').classList.remove('open');
+          }
+        });
+      }
+
       await loadUnits();
       await loadFrontLocations();
+      await loadBackLocations();
 
       const cart = [];
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const unitName = document.getElementById('unit').value;
         const frontLocation = document.getElementById('frontLocation').value;
+        const backLocation = document.getElementById('backLocation').value;
         const date = document.getElementById('date').value;
 
-        if (!unitName || !frontLocation || !date) {
+        if (!unitName || !frontLocation || !backLocation || !date) {
           alert('Please complete all selections.');
           return;
         }
 
-        cart.push({ unitName, frontLocation, date });
+        cart.push({ unitName, frontLocation, backLocation, date });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
@@ -219,7 +250,7 @@
 
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `${unitName} @ ${frontLocation} — ${date} <button class="btn btn-sm btn-danger">&times;</button>`;
+        li.innerHTML = `${unitName} @ ${frontLocation} / ${backLocation} — ${date} <button class="btn btn-sm btn-danger">&times;</button>`;
         li.querySelector('button').addEventListener('click', () => {
           const index = cart.findIndex(item => item.unitName === unitName && item.date === date);
           if (index !== -1) cart.splice(index, 1);
@@ -246,7 +277,7 @@
         let allSuccessful = true;
 
         for (const item of cart) {
-          const { unitName, frontLocation, date } = item;
+          const { unitName, frontLocation, backLocation, date } = item;
 
           const { data: unitData, error: unitError } = await supabase
             .from('units')
@@ -262,13 +293,13 @@
           const unitId = unitData.id;
 
           const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
-            { name, phone, email, address, city, unit: unitId, front_location: frontLocation, date }
+            { name, phone, email, address, city, unit: unitId, front_location: frontLocation, back_location: backLocation, date }
           ]);
 
           if (insertError) {
             allSuccessful = false;
           } else {
-            const params = { name, phone, email, address, city, unit: unitName, front_location: frontLocation, date };
+            const params = { name, phone, email, address, city, unit: unitName, front_location: frontLocation, back_location: backLocation, date };
             emailjs.send("service_9fvjwls", "template_gveha9l", params);
             emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
           }
@@ -279,6 +310,7 @@
           document.getElementById('bookingForm').reset();
           document.getElementById('unitDisplay').textContent = 'Select a unit';
           document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
+          document.getElementById('backLocationDisplay').textContent = 'Select a back location';
           cart.length = 0;
           document.getElementById('cartList').innerHTML = '';
           document.getElementById('cartSection').style.display = 'none';
