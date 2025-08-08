@@ -230,4 +230,173 @@
         const { data, error } = await supabase.from('Graphic Back').select('name, thumbnail_url');
         if (error) return;
         const list = document.getElementById('backGraphicList');
-        const
+        const display = document.getElementById('backGraphicDisplay');
+        const hidden = document.getElementById('backGraphic');
+        data.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'unit-option';
+          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
+          div.addEventListener('click', () => {
+            display.textContent = item.name;
+            hidden.value = item.name;
+            document.getElementById('backGraphicDropdown').classList.remove('open');
+          });
+          list.appendChild(div);
+        });
+        display.addEventListener('click', () => {
+          document.getElementById('backGraphicDropdown').classList.toggle('open');
+        });
+        document.addEventListener('click', (e) => {
+          if (!document.getElementById('backGraphicDropdown').contains(e.target)) {
+            document.getElementById('backGraphicDropdown').classList.remove('open');
+          }
+        });
+      }
+
+      // Front Graphics (existing separate dropdown)
+      async function loadFrontGraphicsExtra() {
+        const { data, error } = await supabase.from('Graphic Front').select('name, thumbnail_url');
+        if (error) return;
+        const list = document.getElementById('frontGraphicList');
+        const display = document.getElementById('frontGraphicDisplay');
+        const hidden = document.getElementById('frontGraphic');
+        data.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'unit-option';
+          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
+          div.addEventListener('click', () => {
+            display.textContent = item.name;
+            hidden.value = item.name;
+            document.getElementById('frontGraphicDropdown').classList.remove('open');
+          });
+          list.appendChild(div);
+        });
+        display.addEventListener('click', () => {
+          document.getElementById('frontGraphicDropdown').classList.toggle('open');
+        });
+        document.addEventListener('click', (e) => {
+          if (!document.getElementById('frontGraphicDropdown').contains(e.target)) {
+            document.getElementById('frontGraphicDropdown').classList.remove('open');
+          }
+        });
+      }
+
+      await loadUnits();
+      await loadFrontLocations();
+      await loadBackLocations();
+      await loadBackGraphics();
+      await loadFrontGraphicsExtra();
+
+      const cart = [];
+      document.getElementById('addToCartBtn').addEventListener('click', () => {
+        const unitName = document.getElementById('unit').value;               // Front Graphic from main dropdown
+        const frontLocation = document.getElementById('frontLocation').value;
+        const backLocation = document.getElementById('backLocation').value;
+        const backGraphic = document.getElementById('backGraphic').value;
+        const frontGraphic = document.getElementById('frontGraphic').value;   // NEW: extra front graphic dropdown
+
+        if (!unitName || !frontLocation || !backLocation || !backGraphic || !frontGraphic) {
+          alert('Please complete all selections.');
+          return;
+        }
+
+        cart.push({ unitName, frontLocation, backLocation, backGraphic, frontGraphic });
+
+        const cartSection = document.getElementById('cartSection');
+        const cartList = document.getElementById('cartList');
+        cartSection.style.display = 'block';
+
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.innerHTML = `${unitName} @ ${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} <button class="btn btn-sm btn-danger">&times;</button>`;
+        li.querySelector('button').addEventListener('click', () => {
+          const index = cart.findIndex(item =>
+            item.unitName === unitName &&
+            item.frontLocation === frontLocation &&
+            item.backLocation === backLocation &&
+            item.backGraphic === backGraphic &&
+            item.frontGraphic === frontGraphic
+          );
+          if (index !== -1) cart.splice(index, 1);
+          li.remove();
+          if (cart.length === 0) cartSection.style.display = 'none';
+        });
+        cartList.appendChild(li);
+      });
+
+      document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const address = document.getElementById('address').value.trim();
+        const city = document.getElementById('city').value.trim();
+
+        if (cart.length === 0) {
+          alert('Your cart is empty.');
+          return;
+        }
+
+        let allSuccessful = true;
+
+        for (const item of cart) {
+          const { unitName, frontLocation, backLocation, backGraphic, frontGraphic } = item;
+
+          const { data: unitData, error: unitError } = await supabase
+            .from('Graphic Front')
+            .select('id')
+            .eq('name', unitName)
+            .single();
+
+          if (unitError || !unitData) {
+            allSuccessful = false;
+            continue;
+          }
+
+          const unitId = unitData.id;
+
+          const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
+            { 
+              name, phone, email, address, city, 
+              unit: unitId, 
+              front_location: frontLocation, 
+              back_location: backLocation, 
+              back_graphic: backGraphic,
+              front_graphic: frontGraphic          /* NEW */
+            }
+          ]);
+
+          if (insertError) {
+            allSuccessful = false;
+          } else {
+            const params = { 
+              name, phone, email, address, city, 
+              unit: unitName, 
+              front_location: frontLocation, 
+              back_location: backLocation, 
+              back_graphic: backGraphic,
+              front_graphic: frontGraphic          /* NEW */
+            };
+            emailjs.send("service_9fvjwls", "template_gveha9l", params);
+            emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
+          }
+        }
+
+        if (allSuccessful) {
+          document.getElementById('successMessage').style.display = 'block';
+          document.getElementById('bookingForm').reset();
+          document.getElementById('unitDisplay').textContent = 'Select a front Graphic';
+          document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
+          document.getElementById('backLocationDisplay').textContent = 'Select a back location';
+          document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
+          document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
+          cart.length = 0;
+          document.getElementById('cartList').innerHTML = '';
+          document.getElementById('cartSection').style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
