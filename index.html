@@ -103,8 +103,6 @@
       </div>
       <input type="hidden" id="backLocation" required />
 
-      <input type="date" id="date" class="form-control mb-3" required />
-
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
@@ -130,17 +128,15 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
+      const supabaseKey = 'eyJhbGciOi...'; // your real key here
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       async function loadUnits() {
         const { data, error } = await supabase.from('units').select('id, name, thumbnail_url');
         if (error) return;
-
         const unitList = document.getElementById('unitList');
         const unitDisplay = document.getElementById('unitDisplay');
         const unitHidden = document.getElementById('unit');
-
         data.forEach(unit => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -152,11 +148,9 @@
           });
           unitList.appendChild(div);
         });
-
         unitDisplay.addEventListener('click', () => {
           document.getElementById('unitDropdown').classList.toggle('open');
         });
-
         document.addEventListener('click', (e) => {
           if (!document.getElementById('unitDropdown').contains(e.target)) {
             document.getElementById('unitDropdown').classList.remove('open');
@@ -167,11 +161,9 @@
       async function loadFrontLocations() {
         const { data, error } = await supabase.from('Front Location').select('name, thumbnail_url');
         if (error) return;
-
         const list = document.getElementById('frontLocationList');
         const display = document.getElementById('frontLocationDisplay');
         const hidden = document.getElementById('frontLocation');
-
         data.forEach(loc => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -183,11 +175,9 @@
           });
           list.appendChild(div);
         });
-
         display.addEventListener('click', () => {
           document.getElementById('frontLocationDropdown').classList.toggle('open');
         });
-
         document.addEventListener('click', (e) => {
           if (!document.getElementById('frontLocationDropdown').contains(e.target)) {
             document.getElementById('frontLocationDropdown').classList.remove('open');
@@ -198,11 +188,9 @@
       async function loadBackLocations() {
         const { data, error } = await supabase.from('Back Location').select('name, thumbnail_url');
         if (error) return;
-
         const list = document.getElementById('backLocationList');
         const display = document.getElementById('backLocationDisplay');
         const hidden = document.getElementById('backLocation');
-
         data.forEach(loc => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -214,11 +202,9 @@
           });
           list.appendChild(div);
         });
-
         display.addEventListener('click', () => {
           document.getElementById('backLocationDropdown').classList.toggle('open');
         });
-
         document.addEventListener('click', (e) => {
           if (!document.getElementById('backLocationDropdown').contains(e.target)) {
             document.getElementById('backLocationDropdown').classList.remove('open');
@@ -235,14 +221,13 @@
         const unitName = document.getElementById('unit').value;
         const frontLocation = document.getElementById('frontLocation').value;
         const backLocation = document.getElementById('backLocation').value;
-        const date = document.getElementById('date').value;
 
-        if (!unitName || !frontLocation || !backLocation || !date) {
+        if (!unitName || !frontLocation || !backLocation) {
           alert('Please complete all selections.');
           return;
         }
 
-        cart.push({ unitName, frontLocation, backLocation, date });
+        cart.push({ unitName, frontLocation, backLocation });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
@@ -250,9 +235,9 @@
 
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `${unitName} @ ${frontLocation} / ${backLocation} — ${date} <button class="btn btn-sm btn-danger">&times;</button>`;
+        li.innerHTML = `${unitName} @ ${frontLocation} / ${backLocation} <button class="btn btn-sm btn-danger">&times;</button>`;
         li.querySelector('button').addEventListener('click', () => {
-          const index = cart.findIndex(item => item.unitName === unitName && item.date === date);
+          const index = cart.findIndex(item => item.unitName === unitName && item.frontLocation === frontLocation && item.backLocation === backLocation);
           if (index !== -1) cart.splice(index, 1);
           li.remove();
           if (cart.length === 0) cartSection.style.display = 'none';
@@ -277,7 +262,7 @@
         let allSuccessful = true;
 
         for (const item of cart) {
-          const { unitName, frontLocation, backLocation, date } = item;
+          const { unitName, frontLocation, backLocation } = item;
 
           const { data: unitData, error: unitError } = await supabase
             .from('units')
@@ -293,13 +278,13 @@
           const unitId = unitData.id;
 
           const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
-            { name, phone, email, address, city, unit: unitId, front_location: frontLocation, back_location: backLocation, date }
+            { name, phone, email, address, city, unit: unitId, front_location: frontLocation, back_location: backLocation }
           ]);
 
           if (insertError) {
             allSuccessful = false;
           } else {
-            const params = { name, phone, email, address, city, unit: unitName, front_location: frontLocation, back_location: backLocation, date };
+            const params = { name, phone, email, address, city, unit: unitName, front_location: frontLocation, back_location: backLocation };
             emailjs.send("service_9fvjwls", "template_gveha9l", params);
             emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
           }
