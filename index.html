@@ -28,11 +28,30 @@
     .btn-primary:hover {
       background-color: #0051c9;
     }
+
+    /* NEW: logo wrapper for robust centering */
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
     .logo {
       max-height: 400px;
       margin-bottom: 20px;
       border-radius: 12px;
+      display: block;
+      max-width: 100%;
+      height: auto;
     }
+
+    /* Mobile-only visual nudge to counter transparent padding in the PNG.
+       Adjust -6px to taste (-10px / -4px, etc.) */
+    @media (max-width: 576px) {
+      .logo {
+        transform: translateX(-6px);
+      }
+    }
+
     .unit-dropdown {
       position: relative;
       text-align: left;
@@ -74,7 +93,11 @@
 </head>
 <body>
   <div class="booking-form text-center">
-    <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo mx-auto d-block">
+    <!-- NEW: wrapper ensures true center -->
+    <div class="logo-wrap">
+      <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo">
+    </div>
+
     <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
     <p>Select your graphic and location.</p>
 
