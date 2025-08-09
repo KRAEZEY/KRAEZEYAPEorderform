@@ -28,8 +28,6 @@
     .btn-primary:hover {
       background-color: #0051c9;
     }
-
-    /* logo centering */
     .logo-wrap {
       display: flex;
       justify-content: center;
@@ -45,7 +43,6 @@
     @media (max-width: 576px) {
       .logo { transform: translateX(-6px); }
     }
-
     .unit-dropdown {
       position: relative;
       text-align: left;
@@ -75,7 +72,6 @@
       display: none;
     }
     .unit-dropdown.open .unit-list { display: block; }
-
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
       background-color: #e9f0ff;
       padding: 10px;
@@ -89,7 +85,6 @@
     <div class="logo-wrap">
       <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo">
     </div>
-
     <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
     <p>Select your graphic and location.</p>
 
@@ -129,23 +124,20 @@
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
-      Purchase successful!<br>Email Sent!
+      purchase successful!<br>Email Sent!
     </div>
 
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
+      <!-- NEW: running total -->
       <div id="cartTotal" class="mt-2 fw-bold" style="display:none;">Cart Total: $0.00</div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <script>
-    (function () {
-      emailjs.init("3Uw1krJxmrVWmbbln");
-    })();
-  </script>
+  <script>(function(){ emailjs.init("3Uw1krJxmrVWmbbln"); })();</script>
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -153,66 +145,12 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      async function loadFrontLocations() {
-        const { data, error } = await supabase.from('Front Location').select('name, thumbnail_url');
+      async function loadDropdown(tableName, listId, displayId, hiddenId, dropdownId) {
+        const { data, error } = await supabase.from(tableName).select('name, thumbnail_url');
         if (error) return;
-        const list = document.getElementById('frontLocationList');
-        const display = document.getElementById('frontLocationDisplay');
-        const hidden = document.getElementById('frontLocation');
-        data.forEach(loc => {
-          const div = document.createElement('div');
-          div.className = 'unit-option';
-          div.innerHTML = `<img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>`;
-          div.addEventListener('click', () => {
-            display.textContent = loc.name;
-            hidden.value = loc.name;
-            document.getElementById('frontLocationDropdown').classList.remove('open');
-          });
-          list.appendChild(div);
-        });
-        display.addEventListener('click', () => {
-          document.getElementById('frontLocationDropdown').classList.toggle('open');
-        });
-        document.addEventListener('click', (e) => {
-          if (!document.getElementById('frontLocationDropdown').contains(e.target)) {
-            document.getElementById('frontLocationDropdown').classList.remove('open');
-          }
-        });
-      }
-
-      async function loadBackLocations() {
-        const { data, error } = await supabase.from('Back Location').select('name, thumbnail_url');
-        if (error) return;
-        const list = document.getElementById('backLocationList');
-        const display = document.getElementById('backLocationDisplay');
-        const hidden = document.getElementById('backLocation');
-        data.forEach(loc => {
-          const div = document.createElement('div');
-          div.className = 'unit-option';
-          div.innerHTML = `<img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>`;
-          div.addEventListener('click', () => {
-            display.textContent = loc.name;
-            hidden.value = loc.name;
-            document.getElementById('backLocationDropdown').classList.remove('open');
-          });
-          list.appendChild(div);
-        });
-        display.addEventListener('click', () => {
-          document.getElementById('backLocationDropdown').classList.toggle('open');
-        });
-        document.addEventListener('click', (e) => {
-          if (!document.getElementById('backLocationDropdown').contains(e.target)) {
-            document.getElementById('backLocationDropdown').classList.remove('open');
-          }
-        });
-      }
-
-      async function loadBackGraphics() {
-        const { data, error } = await supabase.from('Graphic Back').select('name, thumbnail_url');
-        if (error) return;
-        const list = document.getElementById('backGraphicList');
-        const display = document.getElementById('backGraphicDisplay');
-        const hidden = document.getElementById('backGraphic');
+        const list = document.getElementById(listId);
+        const display = document.getElementById(displayId);
+        const hidden = document.getElementById(hiddenId);
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -220,67 +158,38 @@
           div.addEventListener('click', () => {
             display.textContent = item.name;
             hidden.value = item.name;
-            document.getElementById('backGraphicDropdown').classList.remove('open');
+            document.getElementById(dropdownId).classList.remove('open');
           });
           list.appendChild(div);
         });
         display.addEventListener('click', () => {
-          document.getElementById('backGraphicDropdown').classList.toggle('open');
+          document.getElementById(dropdownId).classList.toggle('open');
         });
         document.addEventListener('click', (e) => {
-          if (!document.getElementById('backGraphicDropdown').contains(e.target)) {
-            document.getElementById('backGraphicDropdown').classList.remove('open');
+          if (!document.getElementById(dropdownId).contains(e.target)) {
+            document.getElementById(dropdownId).classList.remove('open');
           }
         });
       }
 
-      async function loadFrontGraphicsExtra() {
-        const { data, error } = await supabase.from('Graphic Front').select('name, thumbnail_url');
-        if (error) return;
-        const list = document.getElementById('frontGraphicList');
-        const display = document.getElementById('frontGraphicDisplay');
-        const hidden = document.getElementById('frontGraphic');
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'unit-option';
-          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
-          div.addEventListener('click', () => {
-            display.textContent = item.name;
-            hidden.value = item.name;
-            document.getElementById('frontGraphicDropdown').classList.remove('open');
-          });
-          list.appendChild(div);
-        });
-        display.addEventListener('click', () => {
-          document.getElementById('frontGraphicDropdown').classList.toggle('open');
-        });
-        document.addEventListener('click', (e) => {
-          if (!document.getElementById('frontGraphicDropdown').contains(e.target)) {
-            document.getElementById('frontGraphicDropdown').classList.remove('open');
-          }
-        });
-      }
-
-      await loadFrontLocations();
-      await loadBackLocations();
-      await loadBackGraphics();
-      await loadFrontGraphicsExtra();
+      await loadDropdown('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
+      await loadDropdown('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
+      await loadDropdown('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
+      await loadDropdown('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
 
       const cart = [];
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-      const ITEM_PRICE = 50; // fixed price per item
+      const ITEM_PRICE = 50; // fixed per-item price display
 
       function updateCartTotal() {
-        const total = cart.reduce((sum, item) => sum + (item.price || 0), 0);
-        const cartSection = document.getElementById('cartSection');
+        const total = cart.length * ITEM_PRICE;
         const totalEl = document.getElementById('cartTotal');
         if (cart.length > 0) {
           totalEl.style.display = 'block';
           totalEl.textContent = `Cart Total: ${currency.format(total)}`;
-          cartSection.style.display = 'block';
         } else {
           totalEl.style.display = 'none';
-          cartSection.style.display = 'none';
+          totalEl.textContent = 'Cart Total: $0.00';
         }
       }
 
@@ -295,28 +204,36 @@
           return;
         }
 
-        const price = ITEM_PRICE;
-        cart.push({ frontLocation, backLocation, backGraphic, frontGraphic, price });
+        cart.push({ frontLocation, backLocation, backGraphic, frontGraphic });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
         const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} — ${currency.format(price)} <button class="btn btn-sm btn-danger">&times;</button>`;
-
+        li.className = 'list-group-item d-flex justify-content-between align-items-start';
+        li.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+            <span><strong>Front Location:</strong> ${frontLocation}</span>
+            <span><strong>Back Location:</strong> ${backLocation}</span>
+            <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
+            <span><strong>Back Graphic:</strong> ${backGraphic}</span>
+            <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+          </div>
+          <button class="btn btn-sm btn-danger" style="align-self:center;">&times;</button>
+        `;
         li.querySelector('button').addEventListener('click', () => {
           const index = cart.findIndex(item =>
             item.frontLocation === frontLocation &&
             item.backLocation === backLocation &&
             item.backGraphic === backGraphic &&
-            item.frontGraphic === frontGraphic &&
-            item.price === price
+            item.frontGraphic === frontGraphic
           );
           if (index !== -1) cart.splice(index, 1);
           li.remove();
-          if (cart.length === 0) cartSection.style.display = 'none';
+          if (cart.length === 0) {
+            cartSection.style.display = 'none';
+          }
           updateCartTotal();
         });
 
@@ -340,57 +257,33 @@
 
         let allSuccessful = true;
 
-        // Insert each item into Supabase (with price)
         for (const item of cart) {
-          const { frontLocation, backLocation, backGraphic, frontGraphic, price } = item;
+          const { frontLocation, backLocation, backGraphic, frontGraphic } = item;
 
           const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
-            { 
-              name, phone, email, address, city, 
-              front_location: frontLocation, 
-              back_location: backLocation, 
-              back_graphic: backGraphic,
-              front_graphic: frontGraphic,
-              price
-            }
+            { name, phone, email, address, city, front_location: frontLocation, back_location: backLocation, back_graphic: backGraphic, front_graphic: frontGraphic }
           ]);
 
           if (insertError) {
             allSuccessful = false;
+          } else {
+            const params = { name, phone, email, address, city, front_location: frontLocation, back_location: backLocation, back_graphic: backGraphic, front_graphic: frontGraphic };
+            emailjs.send("service_9fvjwls", "template_gveha9l", params);
+            emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
           }
         }
 
-        // Send ONE email with all items + grand total
         if (allSuccessful) {
-          const grandTotal = cart.reduce((sum, it) => sum + (it.price || 0), 0);
-          const itemsText = cart.map((it, idx) => {
-            return `${idx + 1}. ${it.frontLocation} / ${it.backLocation} — ${it.frontGraphic} — ${it.backGraphic} — $${it.price.toFixed(2)}`;
-          }).join('\n');
-
-          const emailParams = {
-            name, phone, email, address, city,
-            items: itemsText,                         // multi-line items list
-            grand_total: `$${grandTotal.toFixed(2)}`  // grand total as string
-          };
-
-          // Send to both templates once
-          emailjs.send("service_9fvjwls", "template_gveha9l", emailParams);
-          emailjs.send("service_9fvjwls", "template_jdtvkgj", emailParams);
-
           document.getElementById('successMessage').style.display = 'block';
           document.getElementById('bookingForm').reset();
           document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
           document.getElementById('backLocationDisplay').textContent = 'Select a back location';
           document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
           document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
-
-          // Clear cart + total
           cart.length = 0;
           document.getElementById('cartList').innerHTML = '';
           document.getElementById('cartSection').style.display = 'none';
-          const totalEl = document.getElementById('cartTotal');
-          totalEl.textContent = 'Cart Total: $0.00';
-          totalEl.style.display = 'none';
+          updateCartTotal();
         }
       });
     });
