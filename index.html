@@ -28,10 +28,9 @@
     .btn-primary:hover {
       background-color: #0051c9;
     }
-    .logo-wrap {
-      display: flex;
-      justify-content: center;
-    }
+
+    /* logo centering (unchanged) */
+    .logo-wrap { display: flex; justify-content: center; }
     .logo {
       max-height: 400px;
       margin-bottom: 20px;
@@ -40,43 +39,19 @@
       max-width: 100%;
       height: auto;
     }
-    @media (max-width: 576px) {
-      .logo { transform: translateX(-6px); }
-    }
-    .unit-dropdown {
-      position: relative;
-      text-align: left;
-      margin-bottom: 1rem;
-    }
-    .unit-option {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      cursor: pointer;
-    }
-    .unit-option img {
-      height: 40px;
-      width: 40px;
-      border-radius: 8px;
-      margin-right: 10px;
-    }
+    @media (max-width: 576px) { .logo { transform: translateX(-6px); } }
+
+    .unit-dropdown { position: relative; text-align: left; margin-bottom: 1rem; }
+    .unit-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
+    .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list {
-      position: absolute;
-      width: 100%;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 10;
-      display: none;
+      position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px;
+      max-height: 200px; overflow-y: auto; z-index: 10; display: none;
     }
     .unit-dropdown.open .unit-list { display: block; }
+
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
-      background-color: #e9f0ff;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
+      background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
   </style>
 </head>
@@ -131,229 +106,7 @@
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <script>
-    (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
-  </script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const ITEM_PRICE = 50;
-      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
-      const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-      async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
-        const { data, error } = await supabase.from(table).select('name, thumbnail_url');
-        if (error) return;
-        const list = document.getElementById(listId);
-        const display = document.getElementById(displayId);
-        const hidden = document.getElementById(hiddenId);
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'unit-option';
-          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
-          div.addEventListener('click', () => {
-            display.textContent = item.name;
-            hidden.value = item.name;
-            document.getElementById(dropdownId).classList.remove('open');
-          });
-          list.appendChild(div);
-        });
-        display.addEventListener('click', () => {
-          document.getElementById(dropdownId).classList.toggle('open');
-        });
-        document.addEventListener('click', (e) => {
-          if (!document.getElementById(dropdownId).contains(e.target)) {
-            document.getElementById(dropdownId).classList.remove('open');
-          }
-        });
-      }
-
-      await loadOptions('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
-      await loadOptions('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
-      await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
-      await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
-
-      const cart = [];
-
-      document.getElementById('addToCartBtn').addEventListener('click', () => {
-        const frontLocation = document.getElementById('frontLocation').value;
-        const frontGraphic = document.getElementById('frontGraphic').value;
-        const backLocation = document.getElementById('backLocation').value;
-        const backGraphic = document.getElementById('backGraphic').value;
-
-        if (!frontLocation || !frontGraphic || !backLocation || !backGraphic) {
-          alert('Please complete all selections.');
-          return;
-        }
-
-        cart.push({ frontLocation, frontGraphic, backLocation, backGraphic });
-
-        const cartSection = document.getElementById('cartSection');
-        const cartList = document.getElementById('cartList');
-        cartSection.style.display = 'block';
-
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        li.innerHTML = `
-          <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
-            <span><strong>Front Location:</strong> ${frontLocation}</span>
-            <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
-            <span><strong>Back Location:</strong> ${backLocation}</span>
-            <span><strong>Back Graphic:</strong> ${backGraphic}</span>
-            <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
-          </div>
-        `;
-        cartList.appendChild(li);
-      });
-
-      document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const name = document.getElementBy<!DOCTYPE html> 
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>KRAEZEYAPE ORDER FORM</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <style>
-    body {
-      background-color: #f8f9fa;
-      font-family: Arial, sans-serif;
-    }
-    .booking-form {
-      max-width: 500px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    .form-control {
-      background-color: #e9f0ff;
-    }
-    .btn-primary {
-      background-color: #006aff;
-      border: none;
-    }
-    .btn-primary:hover {
-      background-color: #0051c9;
-    }
-    .logo-wrap {
-      display: flex;
-      justify-content: center;
-    }
-    .logo {
-      max-height: 400px;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      display: block;
-      max-width: 100%;
-      height: auto;
-    }
-    @media (max-width: 576px) {
-      .logo {
-        transform: translateX(-6px);
-      }
-    }
-    .unit-dropdown {
-      position: relative;
-      text-align: left;
-      margin-bottom: 1rem;
-    }
-    .unit-option {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      cursor: pointer;
-    }
-    .unit-option img {
-      height: 40px;
-      width: 40px;
-      border-radius: 8px;
-      margin-right: 10px;
-    }
-    .unit-list {
-      position: absolute;
-      width: 100%;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 10;
-      display: none;
-    }
-    .unit-dropdown.open .unit-list {
-      display: block;
-    }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
-      background-color: #e9f0ff;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div class="booking-form text-center">
-    <div class="logo-wrap">
-      <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo">
-    </div>
-
-    <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
-    <p>Select your graphic and location.</p>
-
-    <form id="bookingForm">
-      <input type="text" id="name" class="form-control mb-2" placeholder="Full Name" required />
-      <input type="tel" id="phone" class="form-control mb-2" placeholder="Phone Number" required />
-      <input type="email" id="email" class="form-control mb-2" placeholder="Email Address" required />
-      <input type="text" id="address" class="form-control mb-2" placeholder="Address" required />
-      <input type="text" id="city" class="form-control mb-2" placeholder="City" required />
-
-      <div class="unit-dropdown" id="frontLocationDropdown">
-        <div id="frontLocationDisplay">Select a front location</div>
-        <div class="unit-list" id="frontLocationList"></div>
-      </div>
-      <input type="hidden" id="frontLocation" required />
-
-      <div class="unit-dropdown" id="frontGraphicDropdown">
-        <div id="frontGraphicDisplay">Select a front graphic</div>
-        <div class="unit-list" id="frontGraphicList"></div>
-      </div>
-      <input type="hidden" id="frontGraphic" />
-
-      <div class="unit-dropdown" id="backLocationDropdown">
-        <div id="backLocationDisplay">Select a back location</div>
-        <div class="unit-list" id="backLocationList"></div>
-      </div>
-      <input type="hidden" id="backLocation" required />
-
-      <div class="unit-dropdown" id="backGraphicDropdown">
-        <div id="backGraphicDisplay">Select a back graphic</div>
-        <div class="unit-list" id="backGraphicList"></div>
-      </div>
-      <input type="hidden" id="backGraphic" required />
-
-      <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <button type="submit" class="btn btn-primary w-100">Reserve</button>
-    </form>
-
-    <div id="successMessage" class="mt-3 text-success" style="display:none;">
-      purchase successful!<br>Email Sent!
-    </div>
-
-    <div class="mt-4 text-start" id="cartSection" style="display: none;">
-      <h5>Cart</h5>
-      <ul class="list-group" id="cartList"></ul>
+      <div id="cartTotal" class="mt-2 fw-bold" style="display:none;">Cart Total: $0.00</div>
     </div>
   </div>
 
@@ -367,19 +120,17 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      const ITEM_PRICE = 50;
-      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
-        const { data, error } = await supabase.from(table).select('name, thumbnail_url');
+      async function loadDropdown(tableName, listId, displayId, hiddenId, dropdownId) {
+        const { data, error } = await supabase.from(tableName).select('name, thumbnail_url');
         if (error) return;
         const list = document.getElementById(listId);
         const display = document.getElementById(displayId);
         const hidden = document.getElementById(hiddenId);
+
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -391,9 +142,11 @@
           });
           list.appendChild(div);
         });
+
         display.addEventListener('click', () => {
           document.getElementById(dropdownId).classList.toggle('open');
         });
+
         document.addEventListener('click', (e) => {
           if (!document.getElementById(dropdownId).contains(e.target)) {
             document.getElementById(dropdownId).classList.remove('open');
@@ -401,41 +154,71 @@
         });
       }
 
-      await loadOptions('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
-      await loadOptions('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
-      await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
-      await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
+      await loadDropdown('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
+      await loadDropdown('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
+      await loadDropdown('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
+      await loadDropdown('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
 
       const cart = [];
+      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+      const ITEM_PRICE = 50; // fixed price per item
+
+      function updateCartTotal() {
+        const total = cart.reduce((sum) => sum + ITEM_PRICE, 0);
+        const totalEl = document.getElementById('cartTotal');
+        if (cart.length > 0) {
+          totalEl.style.display = 'block';
+          totalEl.textContent = `Cart Total: ${currency.format(total)}`;
+        } else {
+          totalEl.style.display = 'none';
+          totalEl.textContent = 'Cart Total: $0.00';
+        }
+      }
+
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
-        const frontGraphic = document.getElementById('frontGraphic').value;
         const backLocation = document.getElementById('backLocation').value;
         const backGraphic = document.getElementById('backGraphic').value;
+        const frontGraphic = document.getElementById('frontGraphic').value;
 
         if (!frontLocation || !backLocation || !backGraphic || !frontGraphic) {
           alert('Please complete all selections.');
           return;
         }
 
-        cart.push({ frontLocation, frontGraphic, backLocation, backGraphic });
+        cart.push({ frontLocation, backLocation, backGraphic, frontGraphic });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
         const li = document.createElement('li');
-        li.className = 'list-group-item';
+        li.className = 'list-group-item d-flex justify-content-between align-items-start';
         li.innerHTML = `
           <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
             <span><strong>Front Location:</strong> ${frontLocation}</span>
-            <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
             <span><strong>Back Location:</strong> ${backLocation}</span>
+            <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
             <span><strong>Back Graphic:</strong> ${backGraphic}</span>
             <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
           </div>
+          <button class="btn btn-sm btn-danger" style="align-self:center;">&times;</button>
         `;
+        li.querySelector('button').addEventListener('click', () => {
+          const index = cart.findIndex(item =>
+            item.frontLocation === frontLocation &&
+            item.backLocation === backLocation &&
+            item.backGraphic === backGraphic &&
+            item.frontGraphic === frontGraphic
+          );
+          if (index !== -1) cart.splice(index, 1);
+          li.remove();
+          if (cart.length === 0) { cartSection.style.display = 'none'; }
+          updateCartTotal();
+        });
+
         cartList.appendChild(li);
+        updateCartTotal();
       });
 
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
@@ -452,87 +235,59 @@
           return;
         }
 
-        const items = `<ul style="list-style:none; padding-left:0; margin:0;">
-          ${cart.map(it =>
-            `<li>
-              Front Location: ${it.frontLocation} <br>
-              Front Graphic: ${it.frontGraphic} <br>
-              Back Location: ${it.backLocation} <br>
-              Back Graphic: ${it.backGraphic} <br>
-              Price: ${currency.format(ITEM_PRICE)}
-            </li>`
-          ).join('')}
-        </ul>`;
+        let allSuccessful = true;
 
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
+        // Insert each item with price into Supabase
+        for (const item of cart) {
+          const { frontLocation, backLocation, backGraphic, frontGraphic } = item;
 
-        const params = { 
-          name, phone, email, address, city,
-          items,
-          grand_total
-        };
+          const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
+            { 
+              name, phone, email, address, city,
+              front_location: frontLocation,
+              back_location: backLocation,
+              back_graphic: backGraphic,
+              front_graphic: frontGraphic,
+              price: ITEM_PRICE
+            }
+          ]);
 
-        emailjs.send("service_9fvjwls", "template_gveha9l", params);
-        emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
-
-        document.getElementById('successMessage').style.display = 'block';
-        document.getElementById('bookingForm').reset();
-        document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
-        document.getElementById('backLocationDisplay').textContent = 'Select a back location';
-        document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
-        document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
-        cart.length = 0;
-        document.getElementById('cartList').innerHTML = '';
-        document.getElementById('cartSection').style.display = 'none';
-      });
-    });
-  </script>
-</body>
-</html>
-Id('name').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const address = document.getElementById('address').value.trim();
-        const city = document.getElementById('city').value.trim();
-
-        if (cart.length === 0) {
-          alert('Your cart is empty.');
-          return;
+          if (insertError) {
+            allSuccessful = false;
+          }
         }
 
-        // Build bullet-free vertical list for email in the requested order
-        const items = `<ul style="list-style:none; padding-left:0; margin:0;">
-          ${cart.map(it =>
-            `<li>
-              Front Location: ${it.frontLocation}<br>
-              Front Graphic: ${it.frontGraphic}<br>
-              Back Location: ${it.backLocation}<br>
-              Back Graphic: ${it.backGraphic}<br>
-              Price: ${currency.format(ITEM_PRICE)}
-            </li>`
-          ).join('')}
-        </ul>`;
+        // Send ONE consolidated email with all items and grand total
+        if (allSuccessful) {
+          const grandTotal = cart.length * ITEM_PRICE;
+          const itemsText = cart.map((it, idx) =>
+            `${idx + 1}. ${it.frontLocation} / ${it.backLocation} — ${it.frontGraphic} — ${it.backGraphic} — ${currency.format(ITEM_PRICE)}`
+          ).join('\n');
 
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
+          const emailParams = {
+            name, phone, email, address, city,
+            items: itemsText,
+            grand_total: currency.format(grandTotal)
+          };
 
-        const params = { 
-          name, phone, email, address, city,
-          items,
-          grand_total
-        };
+          emailjs.send("service_9fvjwls", "template_gveha9l", emailParams);
+          emailjs.send("service_9fvjwls", "template_jdtvkgj", emailParams);
 
-        emailjs.send("service_9fvjwls", "template_gveha9l", params);
-        emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
+          document.getElementById('successMessage').style.display = 'block';
+          document.getElementById('bookingForm').reset();
+          document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
+          document.getElementById('backLocationDisplay').textContent = 'Select a back location';
+          document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
+          document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
 
-        document.getElementById('successMessage').style.display = 'block';
-        document.getElementById('bookingForm').reset();
-        document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
-        document.getElementById('backLocationDisplay').textContent = 'Select a back location';
-        document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
-        document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
-        cart.length = 0;
-        document.getElementById('cartList').innerHTML = '';
-        document.getElementById('cartSection').style.display = 'none';
+          // Clear cart + total
+          cart.length = 0;
+          document.getElementById('cartList').innerHTML = '';
+          document.getElementById('cartSection').style.display = 'none';
+          const totalEl = document.getElementById('cartTotal');
+          totalEl.textContent = 'Cart Total: $0.00';
+          totalEl.style.display = 'none';
+        }
       });
     });
   </script>
