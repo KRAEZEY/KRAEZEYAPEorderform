@@ -29,12 +29,10 @@
       background-color: #0051c9;
     }
 
-    /* NEW: logo wrapper for robust centering */
     .logo-wrap {
       display: flex;
       justify-content: center;
     }
-
     .logo {
       max-height: 400px;
       margin-bottom: 20px;
@@ -43,13 +41,8 @@
       max-width: 100%;
       height: auto;
     }
-
-    /* Mobile-only visual nudge to counter transparent padding in the PNG.
-       Adjust -6px to taste (-10px / -4px, etc.) */
     @media (max-width: 576px) {
-      .logo {
-        transform: translateX(-6px);
-      }
+      .logo { transform: translateX(-6px); }
     }
 
     .unit-dropdown {
@@ -80,9 +73,8 @@
       z-index: 10;
       display: none;
     }
-    .unit-dropdown.open .unit-list {
-      display: block;
-    }
+    .unit-dropdown.open .unit-list { display: block; }
+
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
       background-color: #e9f0ff;
       padding: 10px;
@@ -93,7 +85,6 @@
 </head>
 <body>
   <div class="booking-form text-center">
-    <!-- NEW: wrapper ensures true center -->
     <div class="logo-wrap">
       <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo">
     </div>
@@ -114,12 +105,6 @@
       </div>
       <input type="hidden" id="frontLocation" required />
 
-      <div class="unit-dropdown" id="frontGraphicDropdown">
-        <div id="frontGraphicDisplay">Select a front graphic</div>
-        <div class="unit-list" id="frontGraphicList"></div>
-      </div>
-      <input type="hidden" id="frontGraphic" />
-
       <div class="unit-dropdown" id="backLocationDropdown">
         <div id="backLocationDisplay">Select a back location</div>
         <div class="unit-list" id="backLocationList"></div>
@@ -132,6 +117,15 @@
       </div>
       <input type="hidden" id="backGraphic" required />
 
+      <div class="unit-dropdown" id="frontGraphicDropdown">
+        <div id="frontGraphicDisplay">Select a front graphic</div>
+        <div class="unit-list" id="frontGraphicList"></div>
+      </div>
+      <input type="hidden" id="frontGraphic" />
+
+      <!-- Item Price input (already added earlier) -->
+      <input type="number" id="price" class="form-control mb-2" placeholder="Item Price (USD)" min="0" step="0.01" />
+
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
@@ -143,6 +137,7 @@
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
+      <div id="cartTotal" class="mt-2 fw-bold" style="display:none;">Cart Total: $0.00</div>
     </div>
   </div>
 
@@ -274,18 +269,40 @@
       await loadFrontGraphicsExtra();
 
       const cart = [];
+      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+      function updateCartTotal() {
+        const total = cart.reduce((sum, item) => sum + (item.price || 0), 0);
+        const cartSection = document.getElementById('cartSection');
+        const totalEl = document.getElementById('cartTotal');
+        if (cart.length > 0) {
+          totalEl.style.display = 'block';
+          totalEl.textContent = `Cart Total: ${currency.format(total)}`;
+          cartSection.style.display = 'block';
+        } else {
+          totalEl.style.display = 'none';
+          cartSection.style.display = 'none';
+        }
+      }
+
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const backLocation = document.getElementById('backLocation').value;
         const backGraphic = document.getElementById('backGraphic').value;
         const frontGraphic = document.getElementById('frontGraphic').value;
+        const priceInput = document.getElementById('price').value.trim();
+        const price = parseFloat(priceInput);
 
         if (!frontLocation || !backLocation || !backGraphic || !frontGraphic) {
           alert('Please complete all selections.');
           return;
         }
+        if (priceInput === '' || Number.isNaN(price) || price < 0) {
+          alert('Please enter a valid item price.');
+          return;
+        }
 
-        cart.push({ frontLocation, backLocation, backGraphic, frontGraphic });
+        cart.push({ frontLocation, backLocation, backGraphic, frontGraphic, price });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
@@ -293,19 +310,24 @@
 
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} <button class="btn btn-sm btn-danger">&times;</button>`;
+        li.innerHTML = `${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} — ${currency.format(price)} <button class="btn btn-sm btn-danger">&times;</button>`;
+
         li.querySelector('button').addEventListener('click', () => {
           const index = cart.findIndex(item =>
             item.frontLocation === frontLocation &&
             item.backLocation === backLocation &&
             item.backGraphic === backGraphic &&
-            item.frontGraphic === frontGraphic
+            item.frontGraphic === frontGraphic &&
+            item.price === price
           );
           if (index !== -1) cart.splice(index, 1);
           li.remove();
           if (cart.length === 0) cartSection.style.display = 'none';
+          updateCartTotal();
         });
+
         cartList.appendChild(li);
+        updateCartTotal();
       });
 
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
@@ -325,7 +347,7 @@
         let allSuccessful = true;
 
         for (const item of cart) {
-          const { frontLocation, backLocation, backGraphic, frontGraphic } = item;
+          const { frontLocation, backLocation, backGraphic, frontGraphic, price } = item;
 
           const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
             { 
@@ -333,7 +355,8 @@
               front_location: frontLocation, 
               back_location: backLocation, 
               back_graphic: backGraphic,
-              front_graphic: frontGraphic
+              front_graphic: frontGraphic,
+              price  /* NEW: save per-item price */
             }
           ]);
 
@@ -345,7 +368,8 @@
               front_location: frontLocation, 
               back_location: backLocation, 
               back_graphic: backGraphic,
-              front_graphic: frontGraphic
+              front_graphic: frontGraphic,
+              price  /* NEW: include price in email */
             };
             emailjs.send("service_9fvjwls", "template_gveha9l", params);
             emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
@@ -359,9 +383,13 @@
           document.getElementById('backLocationDisplay').textContent = 'Select a back location';
           document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
           document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
+
           cart.length = 0;
           document.getElementById('cartList').innerHTML = '';
           document.getElementById('cartSection').style.display = 'none';
+          document.getElementById('cartTotal').style.display = 'none';
+          const priceEl = document.getElementById('price');
+          if (priceEl) priceEl.value = '';
         }
       });
     });
