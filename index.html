@@ -44,7 +44,10 @@
     .unit-dropdown { position: relative; text-align: left; margin-bottom: 1rem; }
     .unit-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
-    .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
+    .unit-list {
+      position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px;
+      max-height: 200px; overflow-y: auto; z-index: 10; display: none;
+    }
     .unit-dropdown.open .unit-list { display: block; }
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
@@ -102,6 +105,8 @@
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
+      <!-- NEW: Cart total below the items -->
+      <div id="cartTotal" class="mt-2 fw-bold"></div>
     </div>
   </div>
 
@@ -152,6 +157,12 @@
 
       const cart = [];
 
+      // NEW: simple cart total updater
+      function updateCartTotal() {
+        const total = cart.length * ITEM_PRICE;
+        document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
+      }
+
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic = document.getElementById('frontGraphic').value;
@@ -181,6 +192,9 @@
           </div>
         `;
         cartList.appendChild(li);
+
+        // update total after adding
+        updateCartTotal();
       });
 
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
@@ -197,11 +211,11 @@
           return;
         }
 
-        // INSERT EACH ITEM INTO SUPABASE (from your first working version)
+        // INSERT EACH ITEM INTO SUPABASE
         for (const item of cart) {
           const { frontLocation, frontGraphic, backLocation, backGraphic } = item;
           const { error: insertError } = await supabase
-            .from('KRAEZEYAPE ORDER')  // keeping same table reference that worked before
+            .from('KRAEZEYAPE ORDER')
             .insert([{
               name, phone, email, address, city,
               front_location: frontLocation,
@@ -213,8 +227,6 @@
 
           if (insertError) {
             console.error('Supabase insert failed:', insertError);
-            // (Optional) alert user:
-            // alert('Supabase insert failed: ' + insertError.message);
           }
         }
 
@@ -231,7 +243,8 @@
           ).join('')}
         </ul>`;
 
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
+        const grand_total = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+          .format(cart.length * ITEM_PRICE);
 
         const params = { 
           name, phone, email, address, city,
@@ -251,6 +264,7 @@
         cart.length = 0;
         document.getElementById('cartList').innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
+        // (Cart total will remain from the last update; keeping everything else unchanged as requested)
       });
     });
   </script>
