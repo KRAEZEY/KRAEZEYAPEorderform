@@ -46,7 +46,7 @@
       max-height: 200px; overflow-y: auto; z-index: 10; display: none;
     }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
   </style>
@@ -91,6 +91,13 @@
       </div>
       <input type="hidden" id="backGraphic" required />
 
+      <!-- NEW: Size dropdown -->
+      <div class="unit-dropdown" id="sizeDropdown">
+        <div id="sizeDisplay">Select a size</div>
+        <div class="unit-list" id="sizeList"></div>
+      </div>
+      <input type="hidden" id="size" required />
+
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
@@ -128,7 +135,7 @@
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
-          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
+          div.innerHTML = `<img src="${item.thumbnail_url || ''}" alt="${item.name}" /><span>${item.name}</span>`;
           div.addEventListener('click', () => {
             display.textContent = item.name;
             hidden.value = item.name;
@@ -150,6 +157,8 @@
       await loadOptions('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
       await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
       await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
+      // NEW: load Size options
+      await loadOptions('Size', 'sizeList', 'sizeDisplay', 'size', 'sizeDropdown');
 
       const cart = [];
 
@@ -163,13 +172,14 @@
         const frontGraphic = document.getElementById('frontGraphic').value;
         const backLocation = document.getElementById('backLocation').value;
         const backGraphic = document.getElementById('backGraphic').value;
+        const size = document.getElementById('size').value; // NEW
 
-        if (!frontLocation || !frontGraphic || !backLocation || !backGraphic) {
+        if (!frontLocation || !frontGraphic || !backLocation || !backGraphic || !size) {
           alert('Please complete all selections.');
           return;
         }
 
-        const item = { frontLocation, frontGraphic, backLocation, backGraphic };
+        const item = { frontLocation, frontGraphic, backLocation, backGraphic, size }; // NEW
         cart.push(item);
 
         const cartSection = document.getElementById('cartSection');
@@ -184,6 +194,7 @@
             <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
             <span><strong>Back Location:</strong> ${backLocation}</span>
             <span><strong>Back Graphic:</strong> ${backGraphic}</span>
+            <span><strong>Size:</strong> ${size}</span> <!-- NEW -->
             <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
           </div>
           <button class="btn btn-sm btn-danger">X</button>
@@ -194,7 +205,7 @@
           const index = cart.indexOf(item);
           if (index > -1) cart.splice(index, 1);
           li.remove();
-          if (cart.length === 0) cartSection.style.display = 'none';
+          if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
           updateCartTotal();
         });
 
@@ -216,18 +227,21 @@
           return;
         }
 
+        // Insert each item with size into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size } = item; // NEW
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation,
             front_graphic: frontGraphic,
             back_location: backLocation,
             back_graphic: backGraphic,
+            size: size,              // NEW (column must exist)
             price: ITEM_PRICE
           }]);
         }
 
+        // Email: include size in the list
         const items = `<ul style="list-style:none; padding-left:0; margin:0;">
           ${cart.map(it =>
             `<li>
@@ -235,6 +249,7 @@
               Front Graphic: ${it.frontGraphic}<br>
               Back Location: ${it.backLocation}<br>
               Back Graphic: ${it.backGraphic}<br>
+              Size: ${it.size}<br>
               Price: ${currency.format(ITEM_PRICE)}
             </li>`
           ).join('')}
@@ -252,10 +267,11 @@
         document.getElementById('backLocationDisplay').textContent = 'Select a back location';
         document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
         document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
+        document.getElementById('sizeDisplay').textContent = 'Select a size'; // NEW
         cart.length = 0;
         document.getElementById('cartList').innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
-        updateCartTotal();
+        document.getElementById('cartTotal').textContent = '';
       });
     });
   </script>
