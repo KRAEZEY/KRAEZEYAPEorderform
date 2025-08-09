@@ -29,12 +29,11 @@
       background-color: #0051c9;
     }
 
-    /* NEW: logo wrapper for robust centering */
+    /* logo centering */
     .logo-wrap {
       display: flex;
       justify-content: center;
     }
-
     .logo {
       max-height: 400px;
       margin-bottom: 20px;
@@ -43,12 +42,8 @@
       max-width: 100%;
       height: auto;
     }
-
-    /* Mobile-only visual nudge to counter transparent padding in the PNG. */
     @media (max-width: 576px) {
-      .logo {
-        transform: translateX(-6px);
-      }
+      .logo { transform: translateX(-6px); }
     }
 
     .unit-dropdown {
@@ -79,9 +74,8 @@
       z-index: 10;
       display: none;
     }
-    .unit-dropdown.open .unit-list {
-      display: block;
-    }
+    .unit-dropdown.open .unit-list { display: block; }
+
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
       background-color: #e9f0ff;
       padding: 10px;
@@ -92,7 +86,6 @@
 </head>
 <body>
   <div class="booking-form text-center">
-    <!-- NEW: wrapper ensures true center -->
     <div class="logo-wrap">
       <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo">
     </div>
@@ -142,7 +135,6 @@
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
-      <!-- NEW: Cart total -->
       <div id="cartTotal" class="mt-2 fw-bold" style="display:none;">Cart Total: $0.00</div>
     </div>
   </div>
@@ -276,7 +268,7 @@
 
       const cart = [];
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-      const ITEM_PRICE = 50; // <-- fixed price per item
+      const ITEM_PRICE = 50; // fixed price per item
 
       function updateCartTotal() {
         const total = cart.reduce((sum, item) => sum + (item.price || 0), 0);
@@ -303,7 +295,7 @@
           return;
         }
 
-        const price = ITEM_PRICE; // set to $50 per item
+        const price = ITEM_PRICE;
         cart.push({ frontLocation, backLocation, backGraphic, frontGraphic, price });
 
         const cartSection = document.getElementById('cartSection');
@@ -348,6 +340,7 @@
 
         let allSuccessful = true;
 
+        // Insert each item into Supabase (with price)
         for (const item of cart) {
           const { frontLocation, backLocation, backGraphic, frontGraphic, price } = item;
 
@@ -358,27 +351,32 @@
               back_location: backLocation, 
               back_graphic: backGraphic,
               front_graphic: frontGraphic,
-              price  // save $50 per item to Supabase
+              price
             }
           ]);
 
           if (insertError) {
             allSuccessful = false;
-          } else {
-            const params = { 
-              name, phone, email, address, city, 
-              front_location: frontLocation, 
-              back_location: backLocation, 
-              back_graphic: backGraphic,
-              front_graphic: frontGraphic,
-              price  // include price in EmailJS params
-            };
-            emailjs.send("service_9fvjwls", "template_gveha9l", params);
-            emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
           }
         }
 
+        // Send ONE email with all items + grand total
         if (allSuccessful) {
+          const grandTotal = cart.reduce((sum, it) => sum + (it.price || 0), 0);
+          const itemsText = cart.map((it, idx) => {
+            return `${idx + 1}. ${it.frontLocation} / ${it.backLocation} — ${it.frontGraphic} — ${it.backGraphic} — $${it.price.toFixed(2)}`;
+          }).join('\n');
+
+          const emailParams = {
+            name, phone, email, address, city,
+            items: itemsText,                         // multi-line items list
+            grand_total: `$${grandTotal.toFixed(2)}`  // grand total as string
+          };
+
+          // Send to both templates once
+          emailjs.send("service_9fvjwls", "template_gveha9l", emailParams);
+          emailjs.send("service_9fvjwls", "template_jdtvkgj", emailParams);
+
           document.getElementById('successMessage').style.display = 'block';
           document.getElementById('bookingForm').reset();
           document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
