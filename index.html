@@ -28,10 +28,7 @@
     .btn-primary:hover {
       background-color: #0051c9;
     }
-    .logo-wrap {
-      display: flex;
-      justify-content: center;
-    }
+    .logo-wrap { display: flex; justify-content: center; }
     .logo {
       max-height: 400px;
       margin-bottom: 20px;
@@ -105,7 +102,6 @@
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
-      <!-- NEW: Cart total below the items -->
       <div id="cartTotal" class="mt-2 fw-bold"></div>
     </div>
   </div>
@@ -157,7 +153,6 @@
 
       const cart = [];
 
-      // NEW: simple cart total updater
       function updateCartTotal() {
         const total = cart.length * ITEM_PRICE;
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
@@ -174,26 +169,36 @@
           return;
         }
 
-        cart.push({ frontLocation, frontGraphic, backLocation, backGraphic });
+        const item = { frontLocation, frontGraphic, backLocation, backGraphic };
+        cart.push(item);
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
         const li = document.createElement('li');
-        li.className = 'list-group-item';
+        li.className = 'list-group-item d-flex justify-content-between align-items-start';
         li.innerHTML = `
-          <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+          <div style="display:flex; flex-direction:column; gap:2px;">
             <span><strong>Front Location:</strong> ${frontLocation}</span>
             <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
             <span><strong>Back Location:</strong> ${backLocation}</span>
             <span><strong>Back Graphic:</strong> ${backGraphic}</span>
             <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
           </div>
+          <button class="btn btn-sm btn-danger">X</button>
         `;
-        cartList.appendChild(li);
 
-        // update total after adding
+        // delete button event
+        li.querySelector('button').addEventListener('click', () => {
+          const index = cart.indexOf(item);
+          if (index > -1) cart.splice(index, 1);
+          li.remove();
+          if (cart.length === 0) cartSection.style.display = 'none';
+          updateCartTotal();
+        });
+
+        cartList.appendChild(li);
         updateCartTotal();
       });
 
@@ -211,26 +216,18 @@
           return;
         }
 
-        // INSERT EACH ITEM INTO SUPABASE
         for (const item of cart) {
           const { frontLocation, frontGraphic, backLocation, backGraphic } = item;
-          const { error: insertError } = await supabase
-            .from('KRAEZEYAPE ORDER')
-            .insert([{
-              name, phone, email, address, city,
-              front_location: frontLocation,
-              front_graphic: frontGraphic,
-              back_location: backLocation,
-              back_graphic: backGraphic,
-              price: ITEM_PRICE
-            }]);
-
-          if (insertError) {
-            console.error('Supabase insert failed:', insertError);
-          }
+          await supabase.from('KRAEZEYAPE ORDER').insert([{
+            name, phone, email, address, city,
+            front_location: frontLocation,
+            front_graphic: frontGraphic,
+            back_location: backLocation,
+            back_graphic: backGraphic,
+            price: ITEM_PRICE
+          }]);
         }
 
-        // Build bullet-free vertical list for email in the requested order
         const items = `<ul style="list-style:none; padding-left:0; margin:0;">
           ${cart.map(it =>
             `<li>
@@ -243,14 +240,8 @@
           ).join('')}
         </ul>`;
 
-        const grand_total = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-          .format(cart.length * ITEM_PRICE);
-
-        const params = { 
-          name, phone, email, address, city,
-          items,
-          grand_total
-        };
+        const grand_total = currency.format(cart.length * ITEM_PRICE);
+        const params = { name, phone, email, address, city, items, grand_total };
 
         emailjs.send("service_9fvjwls", "template_gveha9l", params);
         emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
@@ -264,7 +255,7 @@
         cart.length = 0;
         document.getElementById('cartList').innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
-        // (Cart total will remain from the last update; keeping everything else unchanged as requested)
+        updateCartTotal();
       });
     });
   </script>
