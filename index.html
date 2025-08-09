@@ -28,9 +28,10 @@
     .btn-primary:hover {
       background-color: #0051c9;
     }
-
-    /* logo centering (unchanged) */
-    .logo-wrap { display: flex; justify-content: center; }
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+    }
     .logo {
       max-height: 400px;
       margin-bottom: 20px;
@@ -39,19 +40,43 @@
       max-width: 100%;
       height: auto;
     }
-    @media (max-width: 576px) { .logo { transform: translateX(-6px); } }
-
-    .unit-dropdown { position: relative; text-align: left; margin-bottom: 1rem; }
-    .unit-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
-    .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
+    @media (max-width: 576px) {
+      .logo { transform: translateX(-6px); }
+    }
+    .unit-dropdown {
+      position: relative;
+      text-align: left;
+      margin-bottom: 1rem;
+    }
+    .unit-option {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .unit-option img {
+      height: 40px;
+      width: 40px;
+      border-radius: 8px;
+      margin-right: 10px;
+    }
     .unit-list {
-      position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px;
-      max-height: 200px; overflow-y: auto; z-index: 10; display: none;
+      position: absolute;
+      width: 100%;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
     }
     .unit-dropdown.open .unit-list { display: block; }
-
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay {
-      background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
+      background-color: #e9f0ff;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -106,31 +131,30 @@
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
-      <div id="cartTotal" class="mt-2 fw-bold" style="display:none;">Cart Total: $0.00</div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script>
-    (function () {
-      emailjs.init("3Uw1krJxmrVWmbbln");
-    })();
+    (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
   </script>
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      const ITEM_PRICE = 50;
+      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      async function loadDropdown(tableName, listId, displayId, hiddenId, dropdownId) {
-        const { data, error } = await supabase.from(tableName).select('name, thumbnail_url');
+      async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
+        const { data, error } = await supabase.from(table).select('name, thumbnail_url');
         if (error) return;
         const list = document.getElementById(listId);
         const display = document.getElementById(displayId);
         const hidden = document.getElementById(hiddenId);
-
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -142,11 +166,9 @@
           });
           list.appendChild(div);
         });
-
         display.addEventListener('click', () => {
           document.getElementById(dropdownId).classList.toggle('open');
         });
-
         document.addEventListener('click', (e) => {
           if (!document.getElementById(dropdownId).contains(e.target)) {
             document.getElementById(dropdownId).classList.remove('open');
@@ -154,71 +176,42 @@
         });
       }
 
-      await loadDropdown('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
-      await loadDropdown('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
-      await loadDropdown('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
-      await loadDropdown('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
+      await loadOptions('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
+      await loadOptions('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
+      await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
+      await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
 
       const cart = [];
-      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-      const ITEM_PRICE = 50; // fixed price per item
-
-      function updateCartTotal() {
-        const total = cart.reduce((sum) => sum + ITEM_PRICE, 0);
-        const totalEl = document.getElementById('cartTotal');
-        if (cart.length > 0) {
-          totalEl.style.display = 'block';
-          totalEl.textContent = `Cart Total: ${currency.format(total)}`;
-        } else {
-          totalEl.style.display = 'none';
-          totalEl.textContent = 'Cart Total: $0.00';
-        }
-      }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
+        const frontGraphic = document.getElementById('frontGraphic').value;
         const backLocation = document.getElementById('backLocation').value;
         const backGraphic = document.getElementById('backGraphic').value;
-        const frontGraphic = document.getElementById('frontGraphic').value;
 
-        if (!frontLocation || !backLocation || !backGraphic || !frontGraphic) {
+        if (!frontLocation || !frontGraphic || !backLocation || !backGraphic) {
           alert('Please complete all selections.');
           return;
         }
 
-        cart.push({ frontLocation, backLocation, backGraphic, frontGraphic });
+        cart.push({ frontLocation, frontGraphic, backLocation, backGraphic });
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
         const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-start';
+        li.className = 'list-group-item';
         li.innerHTML = `
           <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
             <span><strong>Front Location:</strong> ${frontLocation}</span>
-            <span><strong>Back Location:</strong> ${backLocation}</span>
             <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
+            <span><strong>Back Location:</strong> ${backLocation}</span>
             <span><strong>Back Graphic:</strong> ${backGraphic}</span>
             <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
           </div>
-          <button class="btn btn-sm btn-danger" style="align-self:center;">&times;</button>
         `;
-        li.querySelector('button').addEventListener('click', () => {
-          const index = cart.findIndex(item =>
-            item.frontLocation === frontLocation &&
-            item.backLocation === backLocation &&
-            item.backGraphic === backGraphic &&
-            item.frontGraphic === frontGraphic
-          );
-          if (index !== -1) cart.splice(index, 1);
-          li.remove();
-          if (cart.length === 0) { cartSection.style.display = 'none'; }
-          updateCartTotal();
-        });
-
         cartList.appendChild(li);
-        updateCartTotal();
       });
 
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
@@ -235,59 +228,39 @@
           return;
         }
 
-        let allSuccessful = true;
+        // Build bullet-free vertical list for email in the requested order
+        const items = `<ul style="list-style:none; padding-left:0; margin:0;">
+          ${cart.map(it =>
+            `<li>
+              Front Location: ${it.frontLocation}<br>
+              Front Graphic: ${it.frontGraphic}<br>
+              Back Location: ${it.backLocation}<br>
+              Back Graphic: ${it.backGraphic}<br>
+              Price: ${currency.format(ITEM_PRICE)}
+            </li>`
+          ).join('')}
+        </ul>`;
 
-        // Insert each item with price into Supabase
-        for (const item of cart) {
-          const { frontLocation, backLocation, backGraphic, frontGraphic } = item;
+        const grand_total = currency.format(cart.length * ITEM_PRICE);
 
-          const { error: insertError } = await supabase.from('KRAEZEYAPE ORDER').insert([
-            { 
-              name, phone, email, address, city,
-              front_location: frontLocation,
-              back_location: backLocation,
-              back_graphic: backGraphic,
-              front_graphic: frontGraphic,
-              price: ITEM_PRICE
-            }
-          ]);
+        const params = { 
+          name, phone, email, address, city,
+          items,
+          grand_total
+        };
 
-          if (insertError) {
-            allSuccessful = false;
-          }
-        }
+        emailjs.send("service_9fvjwls", "template_gveha9l", params);
+        emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
 
-        // Send ONE consolidated email with all items and grand total
-        if (allSuccessful) {
-          const grandTotal = cart.length * ITEM_PRICE;
-          const itemsText = cart.map((it, idx) =>
-            `${idx + 1}. ${it.frontLocation} / ${it.backLocation} — ${it.frontGraphic} — ${it.backGraphic} — ${currency.format(ITEM_PRICE)}`
-          ).join('\n');
-
-          const emailParams = {
-            name, phone, email, address, city,
-            items: itemsText,
-            grand_total: currency.format(grandTotal)
-          };
-
-          emailjs.send("service_9fvjwls", "template_gveha9l", emailParams);
-          emailjs.send("service_9fvjwls", "template_jdtvkgj", emailParams);
-
-          document.getElementById('successMessage').style.display = 'block';
-          document.getElementById('bookingForm').reset();
-          document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
-          document.getElementById('backLocationDisplay').textContent = 'Select a back location';
-          document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
-          document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
-
-          // Clear cart + total
-          cart.length = 0;
-          document.getElementById('cartList').innerHTML = '';
-          document.getElementById('cartSection').style.display = 'none';
-          const totalEl = document.getElementById('cartTotal');
-          totalEl.textContent = 'Cart Total: $0.00';
-          totalEl.style.display = 'none';
-        }
+        document.getElementById('successMessage').style.display = 'block';
+        document.getElementById('bookingForm').reset();
+        document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
+        document.getElementById('backLocationDisplay').textContent = 'Select a back location';
+        document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
+        document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
+        cart.length = 0;
+        document.getElementById('cartList').innerHTML = '';
+        document.getElementById('cartSection').style.display = 'none';
       });
     });
   </script>
