@@ -32,6 +32,9 @@
       max-height: 400px;
       margin-bottom: 20px;
       border-radius: 12px;
+      display: block;       /* centers image */
+      margin-left: auto;    /* centers horizontally */
+      margin-right: auto;   /* centers horizontally */
     }
     .unit-dropdown {
       position: relative;
@@ -91,22 +94,18 @@
       </div>
       <input type="hidden" id="frontLocation" required />
 
-      <!-- (Units dropdown removed) -->
-
       <div class="unit-dropdown" id="backLocationDropdown">
         <div id="backLocationDisplay">Select a back location</div>
         <div class="unit-list" id="backLocationList"></div>
       </div>
       <input type="hidden" id="backLocation" required />
 
-      <!-- Back Graphic Dropdown -->
       <div class="unit-dropdown" id="backGraphicDropdown">
         <div id="backGraphicDisplay">Select a back graphic</div>
         <div class="unit-list" id="backGraphicList"></div>
       </div>
       <input type="hidden" id="backGraphic" required />
 
-      <!-- Front Graphic Dropdown (separate) -->
       <div class="unit-dropdown" id="frontGraphicDropdown">
         <div id="frontGraphicDisplay">Select a front graphic</div>
         <div class="unit-list" id="frontGraphicList"></div>
@@ -150,7 +149,7 @@
         data.forEach(loc => {
           const div = document.createElement('div');
           div.className = 'unit-option';
-          div.innerHTML = <img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>;
+          div.innerHTML = `<img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>`;
           div.addEventListener('click', () => {
             display.textContent = loc.name;
             hidden.value = loc.name;
@@ -177,7 +176,7 @@
         data.forEach(loc => {
           const div = document.createElement('div');
           div.className = 'unit-option';
-          div.innerHTML = <img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>;
+          div.innerHTML = `<img src="${loc.thumbnail_url}" alt="${loc.name}" /><span>${loc.name}</span>`;
           div.addEventListener('click', () => {
             display.textContent = loc.name;
             hidden.value = loc.name;
@@ -201,10 +200,10 @@
         const list = document.getElementById('backGraphicList');
         const display = document.getElementById('backGraphicDisplay');
         const hidden = document.getElementById('backGraphic');
-        data.forEach(item => {  /* <-- fixed parentheses here */
+        data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
-          div.innerHTML = <img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>;
+          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
           div.addEventListener('click', () => {
             display.textContent = item.name;
             hidden.value = item.name;
@@ -222,7 +221,6 @@
         });
       }
 
-      // Front Graphics (separate dropdown that stays)
       async function loadFrontGraphicsExtra() {
         const { data, error } = await supabase.from('Graphic Front').select('name, thumbnail_url');
         if (error) return;
@@ -232,7 +230,7 @@
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
-          div.innerHTML = <img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>;
+          div.innerHTML = `<img src="${item.thumbnail_url}" alt="${item.name}" /><span>${item.name}</span>`;
           div.addEventListener('click', () => {
             display.textContent = item.name;
             hidden.value = item.name;
@@ -275,7 +273,7 @@
 
         const li = document.createElement('li');
         li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = ${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} <button class="btn btn-sm btn-danger">&times;</button>;
+        li.innerHTML = `${frontLocation} / ${backLocation} — ${frontGraphic} — ${backGraphic} <button class="btn btn-sm btn-danger">&times;</button>`;
         li.querySelector('button').addEventListener('click', () => {
           const index = cart.findIndex(item =>
             item.frontLocation === frontLocation &&
