@@ -6,48 +6,20 @@
   <title>KRAEZEYAPE ORDER FORM</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <style>
-    body {
-      background-color: #f8f9fa;
-      font-family: Arial, sans-serif;
-    }
-    .booking-form {
-      max-width: 500px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    .form-control {
-      background-color: #e9f0ff;
-    }
-    .btn-primary {
-      background-color: #006aff;
-      border: none;
-    }
-    .btn-primary:hover {
-      background-color: #0051c9;
-    }
+    body { background-color: #f8f9fa; font-family: Arial, sans-serif; }
+    .booking-form { max-width: 500px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .form-control { background-color: #e9f0ff; }
+    .btn-primary { background-color: #006aff; border: none; }
+    .btn-primary:hover { background-color: #0051c9; }
     .logo-wrap { display: flex; justify-content: center; }
-    .logo {
-      max-height: 400px;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      display: block;
-      max-width: 100%;
-      height: auto;
-    }
+    .logo { max-height: 400px; margin-bottom: 20px; border-radius: 12px; display: block; max-width: 100%; height: auto; }
     @media (max-width: 576px) { .logo { transform: translateX(-6px); } }
     .unit-dropdown { position: relative; text-align: left; margin-bottom: 1rem; }
     .unit-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
-    .unit-list {
-      position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px;
-      max-height: 200px; overflow-y: auto; z-index: 10; display: none;
-    }
+    .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    /* added #sizeDisplay and #colorDisplay to match others */
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
   </style>
@@ -92,19 +64,24 @@
       </div>
       <input type="hidden" id="backGraphic" required />
 
-      <!-- Size dropdown (existing) -->
       <div class="unit-dropdown" id="sizeDropdown">
         <div id="sizeDisplay">Select a size</div>
         <div class="unit-list" id="sizeList"></div>
       </div>
       <input type="hidden" id="size" required />
 
-      <!-- NEW: Color dropdown -->
       <div class="unit-dropdown" id="colorDropdown">
         <div id="colorDisplay">Select a color</div>
         <div class="unit-list" id="colorList"></div>
       </div>
       <input type="hidden" id="color" required />
+
+      <!-- NEW: Cut dropdown -->
+      <div class="unit-dropdown" id="cutDropdown">
+        <div id="cutDisplay">Select a cut</div>
+        <div class="unit-list" id="cutList"></div>
+      </div>
+      <input type="hidden" id="cut" required />
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
@@ -166,8 +143,8 @@
       await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
       await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
       await loadOptions('Size', 'sizeList', 'sizeDisplay', 'size', 'sizeDropdown');
-      /* NEW: load Color */
       await loadOptions('Color', 'colorList', 'colorDisplay', 'color', 'colorDropdown');
+      await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown'); // NEW
 
       const cart = [];
 
@@ -182,14 +159,15 @@
         const backLocation = document.getElementById('backLocation').value;
         const backGraphic = document.getElementById('backGraphic').value;
         const size = document.getElementById('size').value;
-        const color = document.getElementById('color').value; /* NEW */
+        const color = document.getElementById('color').value;
+        const cut = document.getElementById('cut').value; // NEW
 
-        if (!frontLocation || !frontGraphic || !backLocation || !backGraphic || !size || !color) {
+        if (!frontLocation || !frontGraphic || !backLocation || !backGraphic || !size || !color || !cut) {
           alert('Please complete all selections.');
           return;
         }
 
-        const item = { frontLocation, frontGraphic, backLocation, backGraphic, size, color }; /* NEW */
+        const item = { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut }; // NEW
         cart.push(item);
 
         const cartSection = document.getElementById('cartSection');
@@ -205,7 +183,8 @@
             <span><strong>Back Location:</strong> ${backLocation}</span>
             <span><strong>Back Graphic:</strong> ${backGraphic}</span>
             <span><strong>Size:</strong> ${size}</span>
-            <span><strong>Color:</strong> ${color}</span> <!-- NEW -->
+            <span><strong>Color:</strong> ${color}</span>
+            <span><strong>Cut:</strong> ${cut}</span>
             <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
           </div>
           <button class="btn btn-sm btn-danger">X</button>
@@ -237,9 +216,8 @@
           return;
         }
 
-        // Insert each item with size and color into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color } = item; /* NEW */
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation,
@@ -247,12 +225,12 @@
             back_location: backLocation,
             back_graphic: backGraphic,
             size: size,
-            color: color,      /* NEW (table must have 'color' column) */
+            color: color,
+            cut: cut, // NEW
             price: ITEM_PRICE
           }]);
         }
 
-        // Email: include size and color
         const items = `<ul style="list-style:none; padding-left:0; margin:0;">
           ${cart.map(it =>
             `<li>
@@ -262,6 +240,7 @@
               Back Graphic: ${it.backGraphic}<br>
               Size: ${it.size}<br>
               Color: ${it.color}<br>
+              Cut: ${it.cut}<br>
               Price: ${currency.format(ITEM_PRICE)}
             </li>`
           ).join('')}
@@ -280,7 +259,8 @@
         document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
         document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
         document.getElementById('sizeDisplay').textContent = 'Select a size';
-        document.getElementById('colorDisplay').textContent = 'Select a color'; /* NEW */
+        document.getElementById('colorDisplay').textContent = 'Select a color';
+        document.getElementById('cutDisplay').textContent = 'Select a cut';
         cart.length = 0;
         document.getElementById('cartList').innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
