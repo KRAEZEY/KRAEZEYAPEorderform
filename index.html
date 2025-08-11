@@ -76,7 +76,6 @@
       </div>
       <input type="hidden" id="color" required />
 
-      <!-- NEW: Cut dropdown -->
       <div class="unit-dropdown" id="cutDropdown">
         <div id="cutDisplay">Select a cut</div>
         <div class="unit-list" id="cutList"></div>
@@ -111,8 +110,12 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+      // 🔹 Now orders by "name" for all dropdowns
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
-        const { data, error } = await supabase.from(table).select('name, thumbnail_url');
+        const { data, error } = await supabase
+          .from(table)
+          .select('name, thumbnail_url')
+          .order('name', { ascending: true }); // Order by name
         if (error) return;
         const list = document.getElementById(listId);
         const display = document.getElementById(displayId);
@@ -144,7 +147,7 @@
       await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
       await loadOptions('Size', 'sizeList', 'sizeDisplay', 'size', 'sizeDropdown');
       await loadOptions('Color', 'colorList', 'colorDisplay', 'color', 'colorDropdown');
-      await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown'); // NEW
+      await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown');
 
       const cart = [];
 
@@ -160,14 +163,14 @@
         const backGraphic = document.getElementById('backGraphic').value;
         const size = document.getElementById('size').value;
         const color = document.getElementById('color').value;
-        const cut = document.getElementById('cut').value; // NEW
+        const cut = document.getElementById('cut').value;
 
         if (!frontLocation || !frontGraphic || !backLocation || !backGraphic || !size || !color || !cut) {
           alert('Please complete all selections.');
           return;
         }
 
-        const item = { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut }; // NEW
+        const item = { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut };
         cart.push(item);
 
         const cartSection = document.getElementById('cartSection');
@@ -226,7 +229,7 @@
             back_graphic: backGraphic,
             size: size,
             color: color,
-            cut: cut, // NEW
+            cut: cut,
             price: ITEM_PRICE
           }]);
         }
