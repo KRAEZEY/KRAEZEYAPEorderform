@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -19,9 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay {
-      background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
-    }
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay { background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -29,7 +27,6 @@
     <div class="logo-wrap">
       <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo">
     </div>
-
     <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
     <p>Select your graphic and location.</p>
 
@@ -50,7 +47,7 @@
         <div id="frontGraphicDisplay">Select a front graphic</div>
         <div class="unit-list" id="frontGraphicList"></div>
       </div>
-      <input type="hidden" id="frontGraphic" />
+      <input type="hidden" id="frontGraphic" required />
 
       <div class="unit-dropdown" id="backLocationDropdown">
         <div id="backLocationDisplay">Select a back location</div>
@@ -76,7 +73,6 @@
       </div>
       <input type="hidden" id="color" required />
 
-      <!-- NEW: Cut dropdown -->
       <div class="unit-dropdown" id="cutDropdown">
         <div id="cutDisplay">Select a cut</div>
         <div class="unit-list" id="cutList"></div>
@@ -84,23 +80,24 @@
       <input type="hidden" id="cut" required />
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <button type="submit" class="btn btn-primary w-100">Reserve</button>
+      <div id="cartSection" style="display:none;">
+        <h5>Cart</h5>
+        <ul class="list-group" id="cartList"></ul>
+        <div id="cartTotal" class="mt-2 fw-bold"></div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-3">Reserve</button>
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
-      purchase successful!<br>Email Sent!
-    </div>
-
-    <div class="mt-4 text-start" id="cartSection" style="display: none;">
-      <h5>Cart</h5>
-      <ul class="list-group" id="cartList"></ul>
-      <div id="cartTotal" class="mt-2 fw-bold"></div>
+      Purchase successful! Email Sent!
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <script>(function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();</script>
+  <script>
+    (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
+  </script>
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -108,7 +105,7 @@
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
+      const supabaseKey = 'YOUR_SUPABASE_KEY';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
@@ -138,58 +135,89 @@
         });
       }
 
+      // Front Graphic - table order
+      const { data: fgData } = await supabase.from('Graphic Front').select('name, thumbnail_url').order('id', { ascending: true });
+      const fgList = document.getElementById('frontGraphicList');
+      const fgDisplay = document.getElementById('frontGraphicDisplay');
+      const fgHidden = document.getElementById('frontGraphic');
+      fgData.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'unit-option';
+        div.innerHTML = `<img src="${item.thumbnail_url || ''}" alt="${item.name}" /><span>${item.name}</span>`;
+        div.addEventListener('click', () => {
+          fgDisplay.textContent = item.name;
+          fgHidden.value = item.name;
+          document.getElementById('frontGraphicDropdown').classList.remove('open');
+        });
+        fgList.appendChild(div);
+      });
+      fgDisplay.addEventListener('click', () => {
+        document.getElementById('frontGraphicDropdown').classList.toggle('open');
+      });
+      document.addEventListener('click', (e) => {
+        if (!document.getElementById('frontGraphicDropdown').contains(e.target)) {
+          document.getElementById('frontGraphicDropdown').classList.remove('open');
+        }
+      });
+
+      // Back Graphic - table order
+      const { data: bgData } = await supabase.from('Graphic Back').select('name, thumbnail_url').order('id', { ascending: true });
+      const bgList = document.getElementById('backGraphicList');
+      const bgDisplay = document.getElementById('backGraphicDisplay');
+      const bgHidden = document.getElementById('backGraphic');
+      bgData.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'unit-option';
+        div.innerHTML = `<img src="${item.thumbnail_url || ''}" alt="${item.name}" /><span>${item.name}</span>`;
+        div.addEventListener('click', () => {
+          bgDisplay.textContent = item.name;
+          bgHidden.value = item.name;
+          document.getElementById('backGraphicDropdown').classList.remove('open');
+        });
+        bgList.appendChild(div);
+      });
+      bgDisplay.addEventListener('click', () => {
+        document.getElementById('backGraphicDropdown').classList.toggle('open');
+      });
+      document.addEventListener('click', (e) => {
+        if (!document.getElementById('backGraphicDropdown').contains(e.target)) {
+          document.getElementById('backGraphicDropdown').classList.remove('open');
+        }
+      });
+
       await loadOptions('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
       await loadOptions('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
-      await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
-      await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
       await loadOptions('Size', 'sizeList', 'sizeDisplay', 'size', 'sizeDropdown');
       await loadOptions('Color', 'colorList', 'colorDisplay', 'color', 'colorDropdown');
-      await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown'); // NEW
+      await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown');
 
       const cart = [];
+      const cartList = document.getElementById('cartList');
+      const cartTotal = document.getElementById('cartTotal');
 
       function updateCartTotal() {
         const total = cart.length * ITEM_PRICE;
-        document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
+        cartTotal.textContent = `Total: ${currency.format(total)}`;
       }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        const frontLocation = document.getElementById('frontLocation').value;
-        const frontGraphic = document.getElementById('frontGraphic').value;
-        const backLocation = document.getElementById('backLocation').value;
-        const backGraphic = document.getElementById('backGraphic').value;
-        const size = document.getElementById('size').value;
-        const color = document.getElementById('color').value;
-        const cut = document.getElementById('cut').value; // NEW
-
-        if (!frontLocation || !frontGraphic || !backLocation || !backGraphic || !size || !color || !cut) {
+        const item = {
+          frontLocation: document.getElementById('frontLocation').value,
+          frontGraphic: document.getElementById('frontGraphic').value,
+          backLocation: document.getElementById('backLocation').value,
+          backGraphic: document.getElementById('backGraphic').value,
+          size: document.getElementById('size').value,
+          color: document.getElementById('color').value,
+          cut: document.getElementById('cut').value
+        };
+        if (!item.frontLocation || !item.frontGraphic || !item.backLocation || !item.backGraphic || !item.size || !item.color || !item.cut) {
           alert('Please complete all selections.');
           return;
         }
-
-        const item = { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut }; // NEW
         cart.push(item);
-
-        const cartSection = document.getElementById('cartSection');
-        const cartList = document.getElementById('cartList');
-        cartSection.style.display = 'block';
-
         const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-start';
-        li.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <span><strong>Front Location:</strong> ${frontLocation}</span>
-            <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
-            <span><strong>Back Location:</strong> ${backLocation}</span>
-            <span><strong>Back Graphic:</strong> ${backGraphic}</span>
-            <span><strong>Size:</strong> ${size}</span>
-            <span><strong>Color:</strong> ${color}</span>
-            <span><strong>Cut:</strong> ${cut}</span>
-            <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
-          </div>
-          <button class="btn btn-sm btn-danger">X</button>
-        `;
-
+        li.className = 'list-group-item';
+        li.innerHTML = `${item.frontLocation}<br>${item.frontGraphic}<br>${item.backLocation}<br>${item.backGraphic}<br>${item.size}<br>${item.color}<br>${item.cut} - ${currency.format(ITEM_PRICE)} <button class="btn btn-sm btn-danger float-end">&times;</button>`;
         li.querySelector('button').addEventListener('click', () => {
           const index = cart.indexOf(item);
           if (index > -1) cart.splice(index, 1);
@@ -197,74 +225,35 @@
           if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
           updateCartTotal();
         });
-
         cartList.appendChild(li);
+        document.getElementById('cartSection').style.display = 'block';
         updateCartTotal();
       });
 
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
+        if (cart.length === 0) { alert('Your cart is empty.'); return; }
         const name = document.getElementById('name').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const email = document.getElementById('email').value.trim();
         const address = document.getElementById('address').value.trim();
         const city = document.getElementById('city').value.trim();
-
-        if (cart.length === 0) {
-          alert('Your cart is empty.');
-          return;
-        }
-
+        const itemsText = cart.map(item => `${item.frontLocation}\n${item.frontGraphic}\n${item.backLocation}\n${item.backGraphic}\n${item.size}\n${item.color}\n${item.cut}`).join("\n\n");
+        const grandTotal = currency.format(cart.length * ITEM_PRICE);
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
-            front_location: frontLocation,
-            front_graphic: frontGraphic,
-            back_location: backLocation,
-            back_graphic: backGraphic,
-            size: size,
-            color: color,
-            cut: cut, // NEW
-            price: ITEM_PRICE
+            front_location: item.frontLocation,
+            front_graphic: item.frontGraphic,
+            back_location: item.backLocation,
+            back_graphic: item.backGraphic,
+            size: item.size,
+            color: item.color,
+            cut: item.cut
           }]);
         }
-
-        const items = `<ul style="list-style:none; padding-left:0; margin:0;">
-          ${cart.map(it =>
-            `<li>
-              Front Location: ${it.frontLocation}<br>
-              Front Graphic: ${it.frontGraphic}<br>
-              Back Location: ${it.backLocation}<br>
-              Back Graphic: ${it.backGraphic}<br>
-              Size: ${it.size}<br>
-              Color: ${it.color}<br>
-              Cut: ${it.cut}<br>
-              Price: ${currency.format(ITEM_PRICE)}
-            </li>`
-          ).join('')}
-        </ul>`;
-
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
-        const params = { name, phone, email, address, city, items, grand_total };
-
-        emailjs.send("service_9fvjwls", "template_gveha9l", params);
-        emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
-
+        emailjs.send("service_9fvjwls", "template_gveha9l", { name, phone, email, address, city, items: itemsText, grand_total: grandTotal });
         document.getElementById('successMessage').style.display = 'block';
-        document.getElementById('bookingForm').reset();
-        document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
-        document.getElementById('backLocationDisplay').textContent = 'Select a back location';
-        document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
-        document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
-        document.getElementById('sizeDisplay').textContent = 'Select a size';
-        document.getElementById('colorDisplay').textContent = 'Select a color';
-        document.getElementById('cutDisplay').textContent = 'Select a cut';
-        cart.length = 0;
-        document.getElementById('cartList').innerHTML = '';
-        document.getElementById('cartSection').style.display = 'none';
-        document.getElementById('cartTotal').textContent = '';
       });
     });
   </script>
