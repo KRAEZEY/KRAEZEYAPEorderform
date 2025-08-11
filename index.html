@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>  
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -110,16 +110,18 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      // Order by numeric "units" column for ALL dropdowns
+      // 🔹 Order by numeric "order" column for ALL dropdowns
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
         const { data, error } = await supabase
           .from(table)
-          .select('name, thumbnail_url, units')
-          .order('units', { ascending: true, nullsFirst: false });
+          .select('name, thumbnail_url, "order"')   // include the order column
+          .order('order', { ascending: true });     // numeric order
         if (error) return;
+
         const list = document.getElementById(listId);
         const display = document.getElementById(displayId);
         const hidden = document.getElementById(hiddenId);
+
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -131,6 +133,7 @@
           });
           list.appendChild(div);
         });
+
         display.addEventListener('click', () => {
           document.getElementById(dropdownId).classList.toggle('open');
         });
@@ -230,7 +233,7 @@
             size: size,
             color: color,
             cut: cut,
-            price: ITEM_PRICE
+            price: 50
           }]);
         }
 
@@ -244,12 +247,12 @@
               Size: ${it.size}<br>
               Color: ${it.color}<br>
               Cut: ${it.cut}<br>
-              Price: ${currency.format(ITEM_PRICE)}
+              Price: ${currency.format(50)}
             </li>`
           ).join('')}
         </ul>`;
 
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
+        const grand_total = currency.format(cart.length * 50);
         const params = { name, phone, email, address, city, items, grand_total };
 
         emailjs.send("service_9fvjwls", "template_gveha9l", params);
