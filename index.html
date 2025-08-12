@@ -128,7 +128,7 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      // Toggle (keep buttons visible; toggle sections + requirements)
+      // Toggle sections (buttons remain visible)
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
         const sec = document.getElementById('graphicsSection');
         sec.style.display = (sec.style.display === 'none' || sec.style.display === '') ? 'block' : 'none';
@@ -276,6 +276,7 @@
           return;
         }
 
+        // Insert into Supabase: use column hat_sizes (plural) as requested
         for (const item of cart) {
           const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
@@ -287,11 +288,12 @@
             size:           size          || null,
             color:          color         || null,
             cut:            cut           || null,
-            hat_size:       hatStyle      || null,
+            hat_sizes:      hatStyle      || null,   // <-- CHANGED: hat_sizes
             price: ITEM_PRICE
           }]);
         }
 
+        // Email: show "Hat Sizes:" label
         const items = `<ul style="list-style:none; padding-left:0; margin:0;">
           ${cart.map(it =>
             `<li>
@@ -302,7 +304,7 @@
               Size: ${it.size || ''}<br>
               Color: ${it.color || ''}<br>
               Cut: ${it.cut || ''}<br>
-              Hat Size: ${it.hatStyle || ''}<br>
+              Hat Sizes: ${it.hatStyle || ''}<br>   <!-- <-- CHANGED label -->
               Price: ${currency.format(ITEM_PRICE)}
             </li>`
           ).join('')}
