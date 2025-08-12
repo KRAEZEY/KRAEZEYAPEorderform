@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -40,7 +40,7 @@
       <input type="text" id="address" class="form-control mb-2" placeholder="Address" required />
       <input type="text" id="city" class="form-control mb-2" placeholder="City" required />
 
-      <!-- Graphic T + Hat Buttons -->
+      <!-- Buttons -->
       <div class="d-flex gap-2 mb-3">
         <button type="button" id="showGraphicsBtn" class="btn btn-info w-100">Graphic T</button>
         <button type="button" id="showHatBtn" class="btn btn-warning w-100">Hat</button>
@@ -125,26 +125,57 @@
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
+      const supabaseKey = 'YOUR_SUPABASE_KEY';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      // Toggle sections (buttons remain visible)
+      // Helpers to clear selections when a section is hidden
+      function clearGraphicsSelections() {
+        const displays = [
+          ['frontLocationDisplay', 'Select a front location', 'frontLocationDropdown'],
+          ['frontGraphicDisplay',  'Select a front graphic',  'frontGraphicDropdown'],
+          ['backLocationDisplay',  'Select a back location',  'backLocationDropdown'],
+          ['backGraphicDisplay',   'Select a back graphic',   'backGraphicDropdown'],
+          ['sizeDisplay',          'Select a size',           'sizeDropdown'],
+          ['colorDisplay',         'Select a color',          'colorDropdown'],
+          ['cutDisplay',           'Select a cut',            'cutDropdown']
+        ];
+        const hiddens = ['frontLocation','frontGraphic','backLocation','backGraphic','size','color','cut'];
+        displays.forEach(([dispId, label, ddId]) => {
+          const disp = document.getElementById(dispId);
+          const dd   = document.getElementById(ddId);
+          if (disp) disp.textContent = label;
+          if (dd) dd.classList.remove('open');
+        });
+        hiddens.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      }
+      function clearHatSelections() {
+        const disp = document.getElementById('hatStyleDisplay');
+        const dd   = document.getElementById('hatStyleDropdown');
+        if (disp) disp.textContent = 'Select a hat size';
+        if (dd) dd.classList.remove('open');
+        const hidden = document.getElementById('hatStyle');
+        if (hidden) hidden.value = '';
+      }
+
+      // Toggle sections (buttons remain visible) + clear when hiding
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
         const sec = document.getElementById('graphicsSection');
-        sec.style.display = (sec.style.display === 'none' || sec.style.display === '') ? 'block' : 'none';
+        const nowHidden = !(sec.style.display === 'none' || sec.style.display === '');
+        sec.style.display = nowHidden ? 'none' : 'block';
+        if (nowHidden) clearGraphicsSelections();
       });
-
       document.getElementById('showHatBtn').addEventListener('click', () => {
         const sec = document.getElementById('hatSection');
-        sec.style.display = (sec.style.display === 'none' || sec.style.display === '') ? 'block' : 'none';
+        const nowHidden = !(sec.style.display === 'none' || sec.style.display === '');
+        sec.style.display = nowHidden ? 'none' : 'block';
+        if (nowHidden) clearHatSelections();
       });
 
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from(table)
           .select('name, thumbnail_url')
           .order('order', { ascending: true });
-        if (error) return;
         const list = document.getElementById(listId);
         const display = document.getElementById(displayId);
         const hidden = document.getElementById(hiddenId);
@@ -159,9 +190,7 @@
           });
           list.appendChild(div);
         });
-        display.addEventListener('click', () => {
-          document.getElementById(dropdownId).classList.toggle('open');
-        });
+        display.addEventListener('click', () => document.getElementById(dropdownId).classList.toggle('open'));
         document.addEventListener('click', (e) => {
           if (!document.getElementById(dropdownId).contains(e.target)) {
             document.getElementById(dropdownId).classList.remove('open');
@@ -186,84 +215,88 @@
       }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        const graphicsVisible = document.getElementById('graphicsSection').style.display !== 'none';
-        const hatVisible = document.getElementById('hatSection').style.display !== 'none';
+        const frontLocation = document.getElementById('frontLocation').value;
+        const frontGraphic = document.getElementById('frontGraphic').value;
+        const backLocation = document.getElementById('backLocation').value;
+        const backGraphic = document.getElementById('backGraphic').value;
+        const size = document.getElementById('size').value;
+        const color = document.getElementById('color').value;
+        const cut = document.getElementById('cut').value;
+        const hatStyle = document.getElementById('hatStyle').value;
 
-        if (!graphicsVisible && !hatVisible) {
-          alert('Please choose a product type (Graphic T or Hat) first.');
+        const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
+        const hasHat = !!hatStyle;
+
+        if (!hasGraphicT && !hasHat) {
+          alert('Please select either a Graphic T or a Hat option.');
           return;
         }
-
-        // Values
-        const frontLocation = document.getElementById('frontLocation').value;
-        const frontGraphic  = document.getElementById('frontGraphic').value;
-        const backLocation  = document.getElementById('backLocation').value;
-        const backGraphic   = document.getElementById('backGraphic').value;
-        const size          = document.getElementById('size').value;
-        const color         = document.getElementById('color').value;
-        const cut           = document.getElementById('cut').value;
-        const hatStyle      = document.getElementById('hatStyle').value;
-
-        // Conditional validation
-        if (graphicsVisible) {
-          if (!frontLocation || !frontGraphic || !backLocation || !backGraphic || !size || !color || !cut) {
-            alert('Please complete all selections for Graphic T.');
-            return;
-          }
-        }
-        if (hatVisible) {
-          if (!hatStyle) {
-            alert('Please select a Hat Size.');
-            return;
-          }
-        }
-
-        const item = { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle };
-        cart.push(item);
 
         const cartSection = document.getElementById('cartSection');
         const cartList = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
-        const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-start';
-        li.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <span><strong>Front Location:</strong> ${frontLocation || ''}</span>
-            <span><strong>Front Graphic:</strong> ${frontGraphic || ''}</span>
-            <span><strong>Back Location:</strong> ${backLocation || ''}</span>
-            <span><strong>Back Graphic:</strong> ${backGraphic || ''}</span>
-            <span><strong>Size:</strong> ${size || ''}</span>
-            <span><strong>Color:</strong> ${color || ''}</span>
-            <span><strong>Cut:</strong> ${cut || ''}</span>
-            <span><strong>Hat Size:</strong> ${hatStyle || ''}</span>
-            <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
-          </div>
-          <button class="btn btn-sm btn-danger">X</button>
-        `;
+        // If Graphic T was selected, push a Graphic T item
+        if (hasGraphicT) {
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null };
+          cart.push(itemGT);
 
-        li.querySelector('button').addEventListener('click', () => {
-          const index = cart.indexOf(item);
-          if (index > -1) cart.splice(index, 1);
-          li.remove();
-          if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
-          updateCartTotal();
-        });
+          const liGT = document.createElement('li');
+          liGT.className = 'list-group-item d-flex justify-content-between align-items-start';
+          liGT.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <span><strong>Item:</strong> Graphic T</span>
+              ${frontLocation ? `<span><strong>Front Location:</strong> ${frontLocation}</span>` : ''}
+              ${frontGraphic ? `<span><strong>Front Graphic:</strong> ${frontGraphic}</span>` : ''}
+              ${backLocation ? `<span><strong>Back Location:</strong> ${backLocation}</span>` : ''}
+              ${backGraphic ? `<span><strong>Back Graphic:</strong> ${backGraphic}</span>` : ''}
+              ${size ? `<span><strong>Size:</strong> ${size}</span>` : ''}
+              ${color ? `<span><strong>Color:</strong> ${color}</span>` : ''}
+              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>` : ''}
+              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+            </div>
+            <button class="btn btn-sm btn-danger">X</button>
+          `;
+          liGT.querySelector('button').addEventListener('click', () => {
+            const index = cart.indexOf(itemGT);
+            if (index > -1) cart.splice(index, 1);
+            liGT.remove();
+            if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
+            updateCartTotal();
+          });
+          cartList.appendChild(liGT);
+        }
 
-        cartList.appendChild(li);
+        // If Hat was selected, push a Hat item
+        if (hasHat) {
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle };
+          cart.push(itemHat);
+
+          const liHat = document.createElement('li');
+          liHat.className = 'list-group-item d-flex justify-content-between align-items-start';
+          liHat.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <span><strong>Item:</strong> Hat</span>
+              <span><strong>Hat Size:</strong> ${hatStyle}</span>
+              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+            </div>
+            <button class="btn btn-sm btn-danger">X</button>
+          `;
+          liHat.querySelector('button').addEventListener('click', () => {
+            const index = cart.indexOf(itemHat);
+            if (index > -1) cart.splice(index, 1);
+            liHat.remove();
+            if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
+            updateCartTotal();
+          });
+          cartList.appendChild(liHat);
+        }
+
         updateCartTotal();
       });
 
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        const graphicsVisible = document.getElementById('graphicsSection').style.display !== 'none';
-        const hatVisible = document.getElementById('hatSection').style.display !== 'none';
-
-        if (!graphicsVisible && !hatVisible) {
-          alert('Please choose a product type (Graphic T or Hat) first.');
-          return;
-        }
 
         const name = document.getElementById('name').value.trim();
         const phone = document.getElementById('phone').value.trim();
@@ -276,35 +309,34 @@
           return;
         }
 
-        // Insert into Supabase: use column hat_sizes (plural) as requested
         for (const item of cart) {
           const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
-            front_graphic:  frontGraphic  || null,
-            back_location:  backLocation  || null,
-            back_graphic:   backGraphic   || null,
-            size:           size          || null,
-            color:          color         || null,
-            cut:            cut           || null,
-            hat_sizes:      hatStyle      || null,   // <-- CHANGED: hat_sizes
+            front_graphic: frontGraphic || null,
+            back_location: backLocation || null,
+            back_graphic: backGraphic || null,
+            size: size || null,
+            color: color || null,
+            cut: cut || null,
+            hat_size: hatStyle || null,
             price: ITEM_PRICE
           }]);
         }
 
-        // Email: show "Hat Sizes:" label
         const items = `<ul style="list-style:none; padding-left:0; margin:0;">
           ${cart.map(it =>
             `<li>
-              Front Location: ${it.frontLocation || ''}<br>
-              Front Graphic: ${it.frontGraphic || ''}<br>
-              Back Location: ${it.backLocation || ''}<br>
-              Back Graphic: ${it.backGraphic || ''}<br>
-              Size: ${it.size || ''}<br>
-              Color: ${it.color || ''}<br>
-              Cut: ${it.cut || ''}<br>
-              Hat Sizes: ${it.hatStyle || ''}<br>   <!-- <-- CHANGED label -->
+              ${it.type ? `Item: ${it.type}<br>` : ''}
+              ${it.frontLocation ? `Front Location: ${it.frontLocation}<br>` : ''}
+              ${it.frontGraphic ? `Front Graphic: ${it.frontGraphic}<br>` : ''}
+              ${it.backLocation ? `Back Location: ${it.backLocation}<br>` : ''}
+              ${it.backGraphic ? `Back Graphic: ${it.backGraphic}<br>` : ''}
+              ${it.size ? `Size: ${it.size}<br>` : ''}
+              ${it.color ? `Color: ${it.color}<br>` : ''}
+              ${it.cut ? `Cut: ${it.cut}<br>` : ''}
+              ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>`
           ).join('')}
@@ -318,18 +350,16 @@
 
         document.getElementById('successMessage').style.display = 'block';
         document.getElementById('bookingForm').reset();
-        document.getElementById('frontLocationDisplay').textContent = 'Select a front location';
-        document.getElementById('backLocationDisplay').textContent = 'Select a back location';
-        document.getElementById('backGraphicDisplay').textContent = 'Select a back graphic';
-        document.getElementById('frontGraphicDisplay').textContent = 'Select a front graphic';
-        document.getElementById('sizeDisplay').textContent = 'Select a size';
-        document.getElementById('colorDisplay').textContent = 'Select a color';
-        document.getElementById('cutDisplay').textContent = 'Select a cut';
-        document.getElementById('hatStyleDisplay').textContent = 'Select a hat size';
-        cart.length = 0;
         document.getElementById('cartList').innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
         document.getElementById('cartTotal').textContent = '';
+        cart.length = 0;
+
+        // Also reset both sections’ UI after submit
+        clearGraphicsSelections();
+        clearHatSelections();
+        document.getElementById('graphicsSection').style.display = 'none';
+        document.getElementById('hatSection').style.display = 'none';
       });
     });
   </script>
