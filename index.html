@@ -40,54 +40,60 @@
       <input type="text" id="address" class="form-control mb-2" placeholder="Address" required />
       <input type="text" id="city" class="form-control mb-2" placeholder="City" required />
 
-      <div class="unit-dropdown" id="frontLocationDropdown">
-        <div id="frontLocationDisplay">Select a front location</div>
-        <div class="unit-list" id="frontLocationList"></div>
-      </div>
-      <input type="hidden" id="frontLocation" required />
+      <!-- Graphic T Button -->
+      <button type="button" id="showGraphicsBtn" class="btn btn-info w-100 mb-3">Graphic T</button>
 
-      <div class="unit-dropdown" id="frontGraphicDropdown">
-        <div id="frontGraphicDisplay">Select a front graphic</div>
-        <div class="unit-list" id="frontGraphicList"></div>
-      </div>
-      <input type="hidden" id="frontGraphic" />
+      <!-- All dropdowns hidden until button click -->
+      <div id="graphicsSection" style="display:none;">
+        <div class="unit-dropdown" id="frontLocationDropdown">
+          <div id="frontLocationDisplay">Select a front location</div>
+          <div class="unit-list" id="frontLocationList"></div>
+        </div>
+        <input type="hidden" id="frontLocation" required />
 
-      <div class="unit-dropdown" id="backLocationDropdown">
-        <div id="backLocationDisplay">Select a back location</div>
-        <div class="unit-list" id="backLocationList"></div>
-      </div>
-      <input type="hidden" id="backLocation" required />
+        <div class="unit-dropdown" id="frontGraphicDropdown">
+          <div id="frontGraphicDisplay">Select a front graphic</div>
+          <div class="unit-list" id="frontGraphicList"></div>
+        </div>
+        <input type="hidden" id="frontGraphic" />
 
-      <div class="unit-dropdown" id="backGraphicDropdown">
-        <div id="backGraphicDisplay">Select a back graphic</div>
-        <div class="unit-list" id="backGraphicList"></div>
-      </div>
-      <input type="hidden" id="backGraphic" required />
+        <div class="unit-dropdown" id="backLocationDropdown">
+          <div id="backLocationDisplay">Select a back location</div>
+          <div class="unit-list" id="backLocationList"></div>
+        </div>
+        <input type="hidden" id="backLocation" required />
 
-      <div class="unit-dropdown" id="sizeDropdown">
-        <div id="sizeDisplay">Select a size</div>
-        <div class="unit-list" id="sizeList"></div>
-      </div>
-      <input type="hidden" id="size" required />
+        <div class="unit-dropdown" id="backGraphicDropdown">
+          <div id="backGraphicDisplay">Select a back graphic</div>
+          <div class="unit-list" id="backGraphicList"></div>
+        </div>
+        <input type="hidden" id="backGraphic" required />
 
-      <div class="unit-dropdown" id="colorDropdown">
-        <div id="colorDisplay">Select a color</div>
-        <div class="unit-list" id="colorList"></div>
-      </div>
-      <input type="hidden" id="color" required />
+        <div class="unit-dropdown" id="sizeDropdown">
+          <div id="sizeDisplay">Select a size</div>
+          <div class="unit-list" id="sizeList"></div>
+        </div>
+        <input type="hidden" id="size" required />
 
-      <div class="unit-dropdown" id="cutDropdown">
-        <div id="cutDisplay">Select a cut</div>
-        <div class="unit-list" id="cutList"></div>
+        <div class="unit-dropdown" id="colorDropdown">
+          <div id="colorDisplay">Select a color</div>
+          <div class="unit-list" id="colorList"></div>
+        </div>
+        <input type="hidden" id="color" required />
+
+        <div class="unit-dropdown" id="cutDropdown">
+          <div id="cutDisplay">Select a cut</div>
+          <div class="unit-list" id="cutList"></div>
+        </div>
+        <input type="hidden" id="cut" required />
       </div>
-      <input type="hidden" id="cut" required />
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <button type="submit" class="btn btn-primary w-100">Purchase</button>
+      <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
-      Purchase successful!<br>Email sent!
+      purchase successful!<br>Email Sent!
     </div>
 
     <div class="mt-4 text-start" id="cartSection" style="display: none;">
@@ -110,18 +116,20 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      // 🔹 Order by numeric "order" column for ALL dropdowns
+      document.getElementById('showGraphicsBtn').addEventListener('click', () => {
+        document.getElementById('graphicsSection').style.display = 'block';
+        document.getElementById('showGraphicsBtn').style.display = 'none';
+      });
+
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
         const { data, error } = await supabase
           .from(table)
-          .select('name, thumbnail_url, "order"')   // include the order column
-          .order('order', { ascending: true });     // numeric order
+          .select('name, thumbnail_url')
+          .order('order', { ascending: true });
         if (error) return;
-
         const list = document.getElementById(listId);
         const display = document.getElementById(displayId);
         const hidden = document.getElementById(hiddenId);
-
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'unit-option';
@@ -133,7 +141,6 @@
           });
           list.appendChild(div);
         });
-
         display.addEventListener('click', () => {
           document.getElementById(dropdownId).classList.toggle('open');
         });
@@ -233,7 +240,7 @@
             size: size,
             color: color,
             cut: cut,
-            price: 50
+            price: ITEM_PRICE
           }]);
         }
 
@@ -247,12 +254,12 @@
               Size: ${it.size}<br>
               Color: ${it.color}<br>
               Cut: ${it.cut}<br>
-              Price: ${currency.format(50)}
+              Price: ${currency.format(ITEM_PRICE)}
             </li>`
           ).join('')}
         </ul>`;
 
-        const grand_total = currency.format(cart.length * 50);
+        const grand_total = currency.format(cart.length * ITEM_PRICE);
         const params = { name, phone, email, address, city, items, grand_total };
 
         emailjs.send("service_9fvjwls", "template_gveha9l", params);
