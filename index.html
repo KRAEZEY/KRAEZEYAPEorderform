@@ -125,7 +125,7 @@
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
+      const supabaseKey = 'YOUR_SUPABASE_KEY';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       function clearGraphicsSelections() {
@@ -156,19 +156,15 @@
         if (hidden) hidden.value = '';
       }
 
-      // Mutually exclusive toggles
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
         const gSec = document.getElementById('graphicsSection');
         const hSec = document.getElementById('hatSection');
         const gHidden = !(gSec.style.display === 'none' || gSec.style.display === '');
-        // Toggle Graphic T
         gSec.style.display = gHidden ? 'none' : 'block';
         if (!gHidden) {
-          // Just opened Graphic T -> hide/clear Hat
           hSec.style.display = 'none';
           clearHatSelections();
         } else {
-          // Just hid Graphic T -> clear its selections
           clearGraphicsSelections();
         }
       });
@@ -176,14 +172,11 @@
         const gSec = document.getElementById('graphicsSection');
         const hSec = document.getElementById('hatSection');
         const hHidden = !(hSec.style.display === 'none' || hSec.style.display === '');
-        // Toggle Hat
         hSec.style.display = hHidden ? 'none' : 'block';
         if (!hHidden) {
-          // Just opened Hat -> hide/clear Graphic T
           gSec.style.display = 'none';
           clearGraphicsSelections();
         } else {
-          // Just hid Hat -> clear its selections
           clearHatSelections();
         }
       });
@@ -244,7 +237,6 @@
         const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
         const hasHat = !!hatStyle;
 
-        // NEW: allow only one type at a time
         if (hasGraphicT && hasHat) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
           return;
@@ -345,43 +337,4 @@
           }]);
         }
 
-        const items = `<ul style="list-style:none; padding-left:0; margin:0;">
-          ${cart.map(it =>
-            `<li>
-              ${it.type ? `Item: ${it.type}<br>` : ''}
-              ${it.frontLocation ? `Front Location: ${it.frontLocation}<br>` : ''}
-              ${it.frontGraphic ? `Front Graphic: ${it.frontGraphic}<br>` : ''}
-              ${it.backLocation ? `Back Location: ${it.backLocation}<br>` : ''}
-              ${it.backGraphic ? `Back Graphic: ${it.backGraphic}<br>` : ''}
-              ${it.size ? `Size: ${it.size}<br>` : ''}
-              ${it.color ? `Color: ${it.color}<br>` : ''}
-              ${it.cut ? `Cut: ${it.cut}<br>` : ''}
-              ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
-              Price: ${currency.format(ITEM_PRICE)}
-            </li>`
-          ).join('')}
-        </ul>`;
-
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
-        const params = { name, phone, email, address, city, items, grand_total };
-
-        emailjs.send("service_9fvjwls", "template_gveha9l", params);
-        emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
-
-        document.getElementById('successMessage').style.display = 'block';
-        document.getElementById('bookingForm').reset();
-        document.getElementById('cartList').innerHTML = '';
-        document.getElementById('cartSection').style.display = 'none';
-        document.getElementById('cartTotal').textContent = '';
-        cart.length = 0;
-
-        // Reset UI
-        clearGraphicsSelections();
-        clearHatSelections();
-        document.getElementById('graphicsSection').style.display = 'none';
-        document.getElementById('hatSection').style.display = 'none';
-      });
-    });
-  </script>
-</body>
-</html>
+        const items = `<ul style="list-style:none;
