@@ -125,10 +125,9 @@
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
+      const supabaseKey = 'YOUR_SUPABASE_KEY';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      // Helpers to clear selections when a section is hidden
       function clearGraphicsSelections() {
         const displays = [
           ['frontLocationDisplay', 'Select a front location', 'frontLocationDropdown'],
@@ -157,18 +156,36 @@
         if (hidden) hidden.value = '';
       }
 
-      // Toggle sections (buttons remain visible) + clear when hiding
+      // Mutually exclusive toggles
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
-        const sec = document.getElementById('graphicsSection');
-        const nowHidden = !(sec.style.display === 'none' || sec.style.display === '');
-        sec.style.display = nowHidden ? 'none' : 'block';
-        if (nowHidden) clearGraphicsSelections();
+        const gSec = document.getElementById('graphicsSection');
+        const hSec = document.getElementById('hatSection');
+        const gHidden = !(gSec.style.display === 'none' || gSec.style.display === '');
+        // Toggle Graphic T
+        gSec.style.display = gHidden ? 'none' : 'block';
+        if (!gHidden) {
+          // Just opened Graphic T -> hide/clear Hat
+          hSec.style.display = 'none';
+          clearHatSelections();
+        } else {
+          // Just hid Graphic T -> clear its selections
+          clearGraphicsSelections();
+        }
       });
       document.getElementById('showHatBtn').addEventListener('click', () => {
-        const sec = document.getElementById('hatSection');
-        const nowHidden = !(sec.style.display === 'none' || sec.style.display === '');
-        sec.style.display = nowHidden ? 'none' : 'block';
-        if (nowHidden) clearHatSelections();
+        const gSec = document.getElementById('graphicsSection');
+        const hSec = document.getElementById('hatSection');
+        const hHidden = !(hSec.style.display === 'none' || hSec.style.display === '');
+        // Toggle Hat
+        hSec.style.display = hHidden ? 'none' : 'block';
+        if (!hHidden) {
+          // Just opened Hat -> hide/clear Graphic T
+          gSec.style.display = 'none';
+          clearGraphicsSelections();
+        } else {
+          // Just hid Hat -> clear its selections
+          clearHatSelections();
+        }
       });
 
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
@@ -227,6 +244,11 @@
         const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
         const hasHat = !!hatStyle;
 
+        // NEW: allow only one type at a time
+        if (hasGraphicT && hasHat) {
+          alert('Please choose either a Graphic T or a Hat, not both at the same time.');
+          return;
+        }
         if (!hasGraphicT && !hasHat) {
           alert('Please select either a Graphic T or a Hat option.');
           return;
@@ -236,7 +258,6 @@
         const cartList = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
-        // If Graphic T was selected, push a Graphic T item
         if (hasGraphicT) {
           const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null };
           cart.push(itemGT);
@@ -267,7 +288,6 @@
           cartList.appendChild(liGT);
         }
 
-        // If Hat was selected, push a Hat item
         if (hasHat) {
           const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle };
           cart.push(itemHat);
@@ -355,7 +375,7 @@
         document.getElementById('cartTotal').textContent = '';
         cart.length = 0;
 
-        // Also reset both sections’ UI after submit
+        // Reset UI
         clearGraphicsSelections();
         clearHatSelections();
         document.getElementById('graphicsSection').style.display = 'none';
