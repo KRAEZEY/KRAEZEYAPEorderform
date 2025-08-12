@@ -40,10 +40,13 @@
       <input type="text" id="address" class="form-control mb-2" placeholder="Address" required />
       <input type="text" id="city" class="form-control mb-2" placeholder="City" required />
 
-      <!-- Graphic T Button -->
-      <button type="button" id="showGraphicsBtn" class="btn btn-info w-100 mb-3">Graphic T</button>
+      <!-- Graphic T + Hat Buttons -->
+      <div class="d-flex gap-2 mb-3">
+        <button type="button" id="showGraphicsBtn" class="btn btn-info w-100">Graphic T</button>
+        <button type="button" id="showHatBtn" class="btn btn-warning w-100">Hat</button>
+      </div>
 
-      <!-- All dropdowns hidden until button click -->
+      <!-- All dropdowns hidden until Graphic T button click -->
       <div id="graphicsSection" style="display:none;">
         <div class="unit-dropdown" id="frontLocationDropdown">
           <div id="frontLocationDisplay">Select a front location</div>
@@ -88,6 +91,15 @@
         <input type="hidden" id="cut" required />
       </div>
 
+      <!-- Hat Section (separate, shown by Hat button) -->
+      <div id="hatSection" style="display:none;">
+        <div class="unit-dropdown" id="hatStyleDropdown">
+          <div id="hatStyleDisplay">Select a hat style</div>
+          <div class="unit-list" id="hatStyleList"></div>
+        </div>
+        <input type="hidden" id="hatStyle" />
+      </div>
+
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
@@ -119,6 +131,11 @@
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
         document.getElementById('graphicsSection').style.display = 'block';
         document.getElementById('showGraphicsBtn').style.display = 'none';
+      });
+
+      document.getElementById('showHatBtn').addEventListener('click', () => {
+        document.getElementById('hatSection').style.display = 'block';
+        document.getElementById('showHatBtn').style.display = 'none';
       });
 
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
@@ -158,6 +175,9 @@
       await loadOptions('Size', 'sizeList', 'sizeDisplay', 'size', 'sizeDropdown');
       await loadOptions('Color', 'colorList', 'colorDisplay', 'color', 'colorDropdown');
       await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown');
+
+      /* NEW: Hat styles list (separate from Graphic T) */
+      await loadOptions('Hat Styles', 'hatStyleList', 'hatStyleDisplay', 'hatStyle', 'hatStyleDropdown');
 
       const cart = [];
 
