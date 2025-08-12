@@ -117,7 +117,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <script>(function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();</script>
+  <script>
+    (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
+  </script>
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -156,6 +158,7 @@
         if (hidden) hidden.value = '';
       }
 
+      // Toggle sections (mutually exclusive)
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
         const gSec = document.getElementById('graphicsSection');
         const hSec = document.getElementById('hatSection');
@@ -181,6 +184,7 @@
         }
       });
 
+      // Load dropdowns ordered by "order" column
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
         const { data } = await supabase
           .from(table)
@@ -321,6 +325,7 @@
           return;
         }
 
+        // Insert each item into Supabase
         for (const item of cart) {
           const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
@@ -337,6 +342,7 @@
           }]);
         }
 
+        // Build email body with clear separators between items
         const items = `<ul style="list-style:none; padding-left:0; margin:0;">
           ${cart.map((it, idx) =>
             `<li>
@@ -355,20 +361,28 @@
         </ul>`;
 
         const grand_total = currency.format(cart.length * ITEM_PRICE);
+        const params = { name, phone, email, address, city, items, grand_total };
 
-        emailjs.send('service_9fvjwls', 'template_jdtvkgj', {
-          name, phone, email, address, city,
-          items, grand_total
-        }).then(() => {
-          document.getElementById('successMessage').style.display = 'block';
-          setTimeout(() => { document.getElementById('successMessage').style.display = 'none'; }, 3000);
-        });
+        // Use your original service & template IDs (both sends)
+        emailjs.send("service_9fvjwls", "template_gveha9l", params);
+        emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
 
+        // Success UI + reset
+        document.getElementById('successMessage').style.display = 'block';
+        setTimeout(() => { document.getElementById('successMessage').style.display = 'none'; }, 3000);
+
+        // Clear cart & UI
         cart.length = 0;
         document.getElementById('cartList').innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
         updateCartTotal();
         e.target.reset();
+
+        // Reset selections/sections
+        clearGraphicsSelections();
+        clearHatSelections();
+        document.getElementById('graphicsSection').style.display = 'none';
+        document.getElementById('hatSection').style.display = 'none';
       });
     });
   </script>
