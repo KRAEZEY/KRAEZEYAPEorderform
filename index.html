@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backGraphicHDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
   </style>
@@ -105,12 +105,18 @@
         </div>
         <input type="hidden" id="frontLocationH" />
 
-        <!-- NEW: Hat Front Graphic (pulls from "graphic front", saves to graphic_fronth) -->
         <div class="unit-dropdown" id="frontGraphicHDropdown">
           <div id="frontGraphicHDisplay">Select a front graphic (Hat)</div>
           <div class="unit-list" id="frontGraphicHList"></div>
         </div>
         <input type="hidden" id="frontGraphicH" />
+
+        <!-- NEW: Hat Back Graphic (pulls from "graphic back", saves to graphic_backh) -->
+        <div class="unit-dropdown" id="backGraphicHDropdown">
+          <div id="backGraphicHDisplay">Select a back graphic (Hat)</div>
+          <div class="unit-list" id="backGraphicHList"></div>
+        </div>
+        <input type="hidden" id="backGraphicH" />
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
@@ -177,13 +183,20 @@
         const hiddenH1 = document.getElementById('frontLocationH');
         if (hiddenH1) hiddenH1.value = '';
 
-        /* NEW: reset hat front graphic */
         const dispH2 = document.getElementById('frontGraphicHDisplay');
         const ddH2   = document.getElementById('frontGraphicHDropdown');
         if (dispH2) dispH2.textContent = 'Select a front graphic (Hat)';
         if (ddH2) ddH2.classList.remove('open');
         const hiddenH2 = document.getElementById('frontGraphicH');
         if (hiddenH2) hiddenH2.value = '';
+
+        /* NEW: reset hat back graphic */
+        const dispH3 = document.getElementById('backGraphicHDisplay');
+        const ddH3   = document.getElementById('backGraphicHDropdown');
+        if (dispH3) dispH3.textContent = 'Select a back graphic (Hat)';
+        if (ddH3) ddH3.classList.remove('open');
+        const hiddenH3 = document.getElementById('backGraphicH');
+        if (hiddenH3) hiddenH3.value = '';
       }
 
       // Toggle sections (mutually exclusive)
@@ -252,11 +265,11 @@
       await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown');
       await loadOptions('Hat Sizes', 'hatStyleList', 'hatStyleDisplay', 'hatStyle', 'hatStyleDropdown');
 
-      // Existing hat front location
       await loadOptions('front location', 'frontLocationHList', 'frontLocationHDisplay', 'frontLocationH', 'frontLocationHDropdown');
-
-      // NEW: hat front graphic from "graphic front"
       await loadOptions('graphic front', 'frontGraphicHList', 'frontGraphicHDisplay', 'frontGraphicH', 'frontGraphicHDropdown');
+
+      /* NEW: load hat back graphics from "graphic back" */
+      await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
 
       const cart = [];
 
@@ -276,11 +289,12 @@
         const hatStyle = document.getElementById('hatStyle').value;
 
         const frontLocationH = document.getElementById('frontLocationH').value;
-        /* NEW: hat front graphic value */
         const frontGraphicH = document.getElementById('frontGraphicH').value;
+        /* NEW: hat back graphic value */
+        const backGraphicH = document.getElementById('backGraphicH').value;
 
         const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
-        const hasHat = !!hatStyle || !!frontLocationH || !!frontGraphicH;
+        const hasHat = !!hatStyle || !!frontLocationH || !!frontGraphicH || !!backGraphicH;
 
         if (hasGraphicT && hasHat) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
@@ -296,7 +310,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, frontLocationH: null, frontGraphicH: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, frontLocationH: null, frontGraphicH: null, backGraphicH: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -326,7 +340,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, frontLocationH, frontGraphicH };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, frontLocationH, frontGraphicH, backGraphicH };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -337,6 +351,7 @@
               <span><strong>Hat Size:</strong> ${hatStyle || '-'}</span>
               ${frontLocationH ? `<span><strong>Front Location (Hat):</strong> ${frontLocationH}</span>` : ''}
               ${frontGraphicH ? `<span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>` : ''}
+              ${backGraphicH ? `<span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>` : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -370,7 +385,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, frontLocationH, frontGraphicH } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, frontLocationH, frontGraphicH, backGraphicH } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -382,8 +397,9 @@
             cut: cut || null,
             hat_size: hatStyle || null,
             front_locationh: frontLocationH || null,
-            /* NEW: save hat front graphic */
             graphic_fronth: frontGraphicH || null,
+            /* NEW: save hat back graphic */
+            graphic_backh: backGraphicH || null,
             price: ITEM_PRICE
           }]);
         }
@@ -403,6 +419,7 @@
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               ${it.frontLocationH ? `Front Location (Hat): ${it.frontLocationH}<br>` : ''}
               ${it.frontGraphicH ? `Front Graphic (Hat): ${it.frontGraphicH}<br>` : ''}
+              ${it.backGraphicH ? `Back Graphic (Hat): ${it.backGraphicH}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
