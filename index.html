@@ -120,7 +120,7 @@
         <input type="hidden" id="frontLocationH" />
 
         <div class="unit-dropdown" id="frontGraphicHDropdown">
-          <div id="frontGraphicHDisplay">Select a front graphic (Hat)</div>
+          <div id="frontGraphicHDisplay">Select a front graphic</div>
           <div class="unit-list" id="frontGraphicHList"></div>
         </div>
         <input type="hidden" id="frontGraphicH" />
@@ -218,7 +218,7 @@
 
         const dispH2 = document.getElementById('frontGraphicHDisplay');
         const ddH2   = document.getElementById('frontGraphicHDropdown');
-        if (dispH2) dispH2.textContent = 'Select a front graphic (Hat)';
+        if (dispH2) dispH2.textContent = 'Select a front graphic';
         if (ddH2) ddH2.classList.remove('open');
         const hiddenH2 = document.getElementById('frontGraphicH');
         if (hiddenH2) hiddenH2.value = '';
@@ -417,7 +417,7 @@
               ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}
               <span><strong>Hat Size:</strong> ${hatStyle}</span>
               <span><strong>Front Location:</strong> ${frontLocationH}</span>
-              <span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>
+              <span><strong>Front Graphic:</strong> ${frontGraphicH}</span>
               <span><strong>Back Location (Hat):</strong> ${backLocationH}</span>
               <span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
@@ -490,7 +490,7 @@
               ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               ${it.frontLocationH ? `Front Location: ${it.frontLocationH}<br>` : ''}
-              ${it.frontGraphicH ? `Front Graphic (Hat): ${it.frontGraphicH}<br>` : ''}
+              ${it.frontGraphicH ? `Front Graphic: ${it.frontGraphicH}<br>` : ''}
               ${it.backLocationH ? `Back Location (Hat): ${it.backLocationH}<br>` : ''}
               ${it.backGraphicH ? `Back Graphic (Hat): ${it.backGraphicH}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
