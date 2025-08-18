@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
   </style>
@@ -99,12 +99,18 @@
         </div>
         <input type="hidden" id="hatStyle" />
 
-        <!-- NEW: Hat Front Location (pulls from Supabase table "front location", saves to front_locationh) -->
         <div class="unit-dropdown" id="frontLocationHDropdown">
           <div id="frontLocationHDisplay">Select a front location (Hat)</div>
           <div class="unit-list" id="frontLocationHList"></div>
         </div>
         <input type="hidden" id="frontLocationH" />
+
+        <!-- NEW: Hat Front Graphic (pulls from "graphic front", saves to graphic_fronth) -->
+        <div class="unit-dropdown" id="frontGraphicHDropdown">
+          <div id="frontGraphicHDisplay">Select a front graphic (Hat)</div>
+          <div class="unit-list" id="frontGraphicHList"></div>
+        </div>
+        <input type="hidden" id="frontGraphicH" />
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
@@ -164,13 +170,20 @@
         const hidden = document.getElementById('hatStyle');
         if (hidden) hidden.value = '';
 
-        // NEW: reset hat front location
-        const dispH = document.getElementById('frontLocationHDisplay');
-        const ddH   = document.getElementById('frontLocationHDropdown');
-        if (dispH) dispH.textContent = 'Select a front location (Hat)';
-        if (ddH) ddH.classList.remove('open');
-        const hiddenH = document.getElementById('frontLocationH');
-        if (hiddenH) hiddenH.value = '';
+        const dispH1 = document.getElementById('frontLocationHDisplay');
+        const ddH1   = document.getElementById('frontLocationHDropdown');
+        if (dispH1) dispH1.textContent = 'Select a front location (Hat)';
+        if (ddH1) ddH1.classList.remove('open');
+        const hiddenH1 = document.getElementById('frontLocationH');
+        if (hiddenH1) hiddenH1.value = '';
+
+        /* NEW: reset hat front graphic */
+        const dispH2 = document.getElementById('frontGraphicHDisplay');
+        const ddH2   = document.getElementById('frontGraphicHDropdown');
+        if (dispH2) dispH2.textContent = 'Select a front graphic (Hat)';
+        if (ddH2) ddH2.classList.remove('open');
+        const hiddenH2 = document.getElementById('frontGraphicH');
+        if (hiddenH2) hiddenH2.value = '';
       }
 
       // Toggle sections (mutually exclusive)
@@ -239,8 +252,11 @@
       await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown');
       await loadOptions('Hat Sizes', 'hatStyleList', 'hatStyleDisplay', 'hatStyle', 'hatStyleDropdown');
 
-      // NEW: load hat front locations from table "front location" (exact name requested)
+      // Existing hat front location
       await loadOptions('front location', 'frontLocationHList', 'frontLocationHDisplay', 'frontLocationH', 'frontLocationHDropdown');
+
+      // NEW: hat front graphic from "graphic front"
+      await loadOptions('graphic front', 'frontGraphicHList', 'frontGraphicHDisplay', 'frontGraphicH', 'frontGraphicHDropdown');
 
       const cart = [];
 
@@ -259,11 +275,12 @@
         const cut = document.getElementById('cut').value;
         const hatStyle = document.getElementById('hatStyle').value;
 
-        // NEW: hat front location value
         const frontLocationH = document.getElementById('frontLocationH').value;
+        /* NEW: hat front graphic value */
+        const frontGraphicH = document.getElementById('frontGraphicH').value;
 
         const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
-        const hasHat = !!hatStyle || !!frontLocationH;
+        const hasHat = !!hatStyle || !!frontLocationH || !!frontGraphicH;
 
         if (hasGraphicT && hasHat) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
@@ -279,7 +296,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, frontLocationH: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, frontLocationH: null, frontGraphicH: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -309,7 +326,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, frontLocationH };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, frontLocationH, frontGraphicH };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -319,6 +336,7 @@
               <span><strong>Item:</strong> Hat</span>
               <span><strong>Hat Size:</strong> ${hatStyle || '-'}</span>
               ${frontLocationH ? `<span><strong>Front Location (Hat):</strong> ${frontLocationH}</span>` : ''}
+              ${frontGraphicH ? `<span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>` : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -352,7 +370,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, frontLocationH } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, frontLocationH, frontGraphicH } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -363,8 +381,9 @@
             color: color || null,
             cut: cut || null,
             hat_size: hatStyle || null,
-            // NEW: save to the requested column
             front_locationh: frontLocationH || null,
+            /* NEW: save hat front graphic */
+            graphic_fronth: frontGraphicH || null,
             price: ITEM_PRICE
           }]);
         }
@@ -383,6 +402,7 @@
               ${it.cut ? `Cut: ${it.cut}<br>` : ''}
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               ${it.frontLocationH ? `Front Location (Hat): ${it.frontLocationH}<br>` : ''}
+              ${it.frontGraphicH ? `Front Graphic (Hat): ${it.frontGraphicH}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
