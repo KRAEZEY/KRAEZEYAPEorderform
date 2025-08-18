@@ -93,14 +93,14 @@
 
       <!-- Hat Section -->
       <div id="hatSection" style="display:none;">
-        <!-- NEW: Hat Color (pulls from "color", saves to color_h) -->
+        <!-- Hat Color (pulls from "color", saves to color_h) -->
         <div class="unit-dropdown" id="hatColorHDropdown">
           <div id="hatColorHDisplay">Select a hat color</div>
           <div class="unit-list" id="hatColorHList"></div>
         </div>
         <input type="hidden" id="colorH" />
 
-        <!-- (existing) Hat Type -->
+        <!-- Hat Type (pulls from "hat type", saves to hat_type) -->
         <div class="unit-dropdown" id="hatTypeDropdown">
           <div id="hatTypeDisplay">Select a hat type</div>
           <div class="unit-list" id="hatTypeList"></div>
@@ -188,7 +188,7 @@
         hiddens.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       }
       function clearHatSelections() {
-        const dispColor = document.getElementById('hatColorHDisplay');       /* NEW */
+        const dispColor = document.getElementById('hatColorHDisplay');
         const ddColor   = document.getElementById('hatColorHDropdown');
         if (dispColor) dispColor.textContent = 'Select a hat color';
         if (ddColor) ddColor.classList.remove('open');
@@ -309,7 +309,6 @@
       await loadOptions('back location', 'backLocationHList', 'backLocationHDisplay', 'backLocationH', 'backLocationHDropdown');
       await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
-      /* NEW: hat color from "color" */
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
       const cart = [];
@@ -319,41 +318,57 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
+      // >>> REPLACED: Require ALL Hat selections to add to cart <<<
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
-        const frontGraphic = document.getElementById('frontGraphic').value;
-        const backLocation = document.getElementById('backLocation').value;
-        const backGraphic = document.getElementById('backGraphic').value;
-        const size = document.getElementById('size').value;
-        const color = document.getElementById('color').value;
-        const cut = document.getElementById('cut').value;
+        const frontGraphic  = document.getElementById('frontGraphic').value;
+        const backLocation  = document.getElementById('backLocation').value;
+        const backGraphic   = document.getElementById('backGraphic').value;
+        const size          = document.getElementById('size').value;
+        const color         = document.getElementById('color').value;
+        const cut           = document.getElementById('cut').value;
 
-        const colorH = document.getElementById('colorH').value;            /* NEW */
-        const hatType = document.getElementById('hatType').value;
-        const hatStyle = document.getElementById('hatStyle').value;
-        const frontLocationH = document.getElementById('frontLocationH').value;
+        const colorH        = document.getElementById('colorH').value;        // Hat Color
+        const hatType       = document.getElementById('hatType').value;       // Hat Type
+        const hatStyle      = document.getElementById('hatStyle').value;      // Hat Size
+        const frontLocationH= document.getElementById('frontLocationH').value;
         const frontGraphicH = document.getElementById('frontGraphicH').value;
         const backLocationH = document.getElementById('backLocationH').value;
-        const backGraphicH = document.getElementById('backGraphicH').value;
+        const backGraphicH  = document.getElementById('backGraphicH').value;
 
+        // Graphic T considered selected if ANY of its fields are chosen (unchanged)
         const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
-        const hasHat = !!hatStyle || !!hatType || !!colorH || !!frontLocationH || !!frontGraphicH || !!backLocationH || !!backGraphicH; /* NEW includes colorH */
 
-        if (hasGraphicT && hasHat) {
+        // Hat must be COMPLETE (all fields) to add to cart
+        const hatFields   = [colorH, hatType, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH];
+        const hasAnyHat   = hatFields.some(v => !!v);
+        const hatComplete = hatFields.every(v => !!v);
+
+        // Prevent mixing categories if user started selecting Hat at all
+        if (hasGraphicT && hasAnyHat) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
           return;
         }
+
+        // Require ALL Hat selections if user is adding a Hat
+        if (hasAnyHat && !hatComplete) {
+          alert('Please complete ALL Hat selections before adding to cart.');
+          return;
+        }
+
+        const hasHat = hatComplete;
+
         if (!hasGraphicT && !hasHat) {
           alert('Please select either a Graphic T or a Hat option.');
           return;
         }
 
         const cartSection = document.getElementById('cartSection');
-        const cartList = document.getElementById('cartList');
+        const cartList    = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null }; /* NEW colorH:null */
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -362,12 +377,12 @@
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Graphic T</span>
               ${frontLocation ? `<span><strong>Front Location:</strong> ${frontLocation}</span>` : ''}
-              ${frontGraphic ? `<span><strong>Front Graphic:</strong> ${frontGraphic}</span>` : ''}
-              ${backLocation ? `<span><strong>Back Location:</strong> ${backLocation}</span>` : ''}
-              ${backGraphic ? `<span><strong>Back Graphic:</strong> ${backGraphic}</span>` : ''}
-              ${size ? `<span><strong>Size:</strong> ${size}</span>` : ''}
-              ${color ? `<span><strong>Color:</strong> ${color}</span>` : ''}
-              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>` : ''}
+              ${frontGraphic  ? `<span><strong>Front Graphic:</strong> ${frontGraphic}</span>`   : ''}
+              ${backLocation  ? `<span><strong>Back Location:</strong> ${backLocation}</span>`   : ''}
+              ${backGraphic   ? `<span><strong>Back Graphic:</strong> ${backGraphic}</span>`     : ''}
+              ${size ? `<span><strong>Size:</strong> ${size}</span>`   : ''}
+              ${color ? `<span><strong>Color:</strong> ${color}</span>`: ''}
+              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>`      : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -383,7 +398,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH }; /* NEW colorH */
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -391,13 +406,13 @@
           liHat.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Hat</span>
-              ${colorH ? `<span><strong>Hat Color:</strong> ${colorH}</span>` : ''}       <!-- NEW -->
+              ${colorH ? `<span><strong>Hat Color:</strong> ${colorH}</span>` : ''}
               ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}
-              <span><strong>Hat Size:</strong> ${hatStyle || '-'}</span>
-              ${frontLocationH ? `<span><strong>Front Location (Hat):</strong> ${frontLocationH}</span>` : ''}
-              ${frontGraphicH ? `<span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>` : ''}
-              ${backLocationH ? `<span><strong>Back Location (Hat):</strong> ${backLocationH}</span>` : ''}
-              ${backGraphicH ? `<span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>` : ''}
+              <span><strong>Hat Size:</strong> ${hatStyle}</span>
+              <span><strong>Front Location (Hat):</strong> ${frontLocationH}</span>
+              <span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>
+              <span><strong>Back Location (Hat):</strong> ${backLocationH}</span>
+              <span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -443,7 +458,7 @@
             cut: cut || null,
             hat_size: hatStyle || null,
             hat_type: hatType || null,
-            color_h: colorH || null,                    /* NEW */
+            color_h: colorH || null,
             front_locationh: frontLocationH || null,
             graphic_fronth: frontGraphicH || null,
             back_locationh: backLocationH || null,
@@ -464,7 +479,7 @@
               ${it.size ? `Size: ${it.size}<br>` : ''}
               ${it.color ? `Color: ${it.color}<br>` : ''}
               ${it.cut ? `Cut: ${it.cut}<br>` : ''}
-              ${it.colorH ? `Hat Color: ${it.colorH}<br>` : ''}           <!-- NEW -->
+              ${it.colorH ? `Hat Color: ${it.colorH}<br>` : ''}
               ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               ${it.frontLocationH ? `Front Location (Hat): ${it.frontLocationH}<br>` : ''}
