@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
   </style>
@@ -93,7 +93,14 @@
 
       <!-- Hat Section -->
       <div id="hatSection" style="display:none;">
-        <!-- NEW: Hat Type (pulls from "hat type", saves to hat_type) -->
+        <!-- NEW: Hat Color (pulls from "color", saves to color_h) -->
+        <div class="unit-dropdown" id="hatColorHDropdown">
+          <div id="hatColorHDisplay">Select a hat color</div>
+          <div class="unit-list" id="hatColorHList"></div>
+        </div>
+        <input type="hidden" id="colorH" />
+
+        <!-- (existing) Hat Type -->
         <div class="unit-dropdown" id="hatTypeDropdown">
           <div id="hatTypeDisplay">Select a hat type</div>
           <div class="unit-list" id="hatTypeList"></div>
@@ -181,6 +188,13 @@
         hiddens.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       }
       function clearHatSelections() {
+        const dispColor = document.getElementById('hatColorHDisplay');       /* NEW */
+        const ddColor   = document.getElementById('hatColorHDropdown');
+        if (dispColor) dispColor.textContent = 'Select a hat color';
+        if (ddColor) ddColor.classList.remove('open');
+        const hiddenColor = document.getElementById('colorH');
+        if (hiddenColor) hiddenColor.value = '';
+
         const dispType = document.getElementById('hatTypeDisplay');
         const ddType   = document.getElementById('hatTypeDropdown');
         if (dispType) dispType.textContent = 'Select a hat type';
@@ -294,9 +308,9 @@
       await loadOptions('graphic front', 'frontGraphicHList', 'frontGraphicHDisplay', 'frontGraphicH', 'frontGraphicHDropdown');
       await loadOptions('back location', 'backLocationHList', 'backLocationHDisplay', 'backLocationH', 'backLocationHDropdown');
       await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
-
-      /* NEW: hat type from "hat type" */
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
+      /* NEW: hat color from "color" */
+      await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
       const cart = [];
 
@@ -314,7 +328,8 @@
         const color = document.getElementById('color').value;
         const cut = document.getElementById('cut').value;
 
-        const hatType = document.getElementById('hatType').value;          /* NEW */
+        const colorH = document.getElementById('colorH').value;            /* NEW */
+        const hatType = document.getElementById('hatType').value;
         const hatStyle = document.getElementById('hatStyle').value;
         const frontLocationH = document.getElementById('frontLocationH').value;
         const frontGraphicH = document.getElementById('frontGraphicH').value;
@@ -322,7 +337,7 @@
         const backGraphicH = document.getElementById('backGraphicH').value;
 
         const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
-        const hasHat = !!hatStyle || !!hatType || !!frontLocationH || !!frontGraphicH || !!backLocationH || !!backGraphicH;
+        const hasHat = !!hatStyle || !!hatType || !!colorH || !!frontLocationH || !!frontGraphicH || !!backLocationH || !!backGraphicH; /* NEW includes colorH */
 
         if (hasGraphicT && hasHat) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
@@ -338,7 +353,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null }; /* NEW colorH:null */
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -368,7 +383,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, frontLocationH, frontGraphicH, backLocationH, backGraphicH };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH }; /* NEW colorH */
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -376,7 +391,8 @@
           liHat.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Hat</span>
-              ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}       <!-- NEW -->
+              ${colorH ? `<span><strong>Hat Color:</strong> ${colorH}</span>` : ''}       <!-- NEW -->
+              ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}
               <span><strong>Hat Size:</strong> ${hatStyle || '-'}</span>
               ${frontLocationH ? `<span><strong>Front Location (Hat):</strong> ${frontLocationH}</span>` : ''}
               ${frontGraphicH ? `<span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>` : ''}
@@ -415,7 +431,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, frontLocationH, frontGraphicH, backLocationH, backGraphicH } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -426,7 +442,8 @@
             color: color || null,
             cut: cut || null,
             hat_size: hatStyle || null,
-            hat_type: hatType || null,                 /* NEW */
+            hat_type: hatType || null,
+            color_h: colorH || null,                    /* NEW */
             front_locationh: frontLocationH || null,
             graphic_fronth: frontGraphicH || null,
             back_locationh: backLocationH || null,
@@ -447,7 +464,8 @@
               ${it.size ? `Size: ${it.size}<br>` : ''}
               ${it.color ? `Color: ${it.color}<br>` : ''}
               ${it.cut ? `Cut: ${it.cut}<br>` : ''}
-              ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}          <!-- NEW -->
+              ${it.colorH ? `Hat Color: ${it.colorH}<br>` : ''}           <!-- NEW -->
+              ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               ${it.frontLocationH ? `Front Location (Hat): ${it.frontLocationH}<br>` : ''}
               ${it.frontGraphicH ? `Front Graphic (Hat): ${it.frontGraphicH}<br>` : ''}
