@@ -132,7 +132,7 @@
         <input type="hidden" id="backLocationH" />
 
         <div class="unit-dropdown" id="backGraphicHDropdown">
-          <div id="backGraphicHDisplay">Select a back graphic (Hat)</div>
+          <div id="backGraphicHDisplay">Select a back graphic</div>
           <div class="unit-list" id="backGraphicHList"></div>
         </div>
         <input type="hidden" id="backGraphicH" />
@@ -232,7 +232,7 @@
 
         const dispH3 = document.getElementById('backGraphicHDisplay');
         const ddH3   = document.getElementById('backGraphicHDropdown');
-        if (dispH3) dispH3.textContent = 'Select a back graphic (Hat)';
+        if (dispH3) dispH3.textContent = 'Select a back graphic';
         if (ddH3) ddH3.classList.remove('open');
         const hiddenH3 = document.getElementById('backGraphicH');
         if (hiddenH3) hiddenH3.value = '';
@@ -419,7 +419,7 @@
               <span><strong>Front Location:</strong> ${frontLocationH}</span>
               <span><strong>Front Graphic:</strong> ${frontGraphicH}</span>
               <span><strong>Back Location:</strong> ${backLocationH}</span>
-              <span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>
+              <span><strong>Back Graphic:</strong> ${backGraphicH}</span>
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -492,7 +492,7 @@
               ${it.frontLocationH ? `Front Location: ${it.frontLocationH}<br>` : ''}
               ${it.frontGraphicH ? `Front Graphic: ${it.frontGraphicH}<br>` : ''}
               ${it.backLocationH ? `Back Location: ${it.backLocationH}<br>` : ''}
-              ${it.backGraphicH ? `Back Graphic (Hat): ${it.backGraphicH}<br>` : ''}
+              ${it.backGraphicH ? `Back Graphic: ${it.backGraphicH}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
