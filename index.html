@@ -126,7 +126,7 @@
         <input type="hidden" id="frontGraphicH" />
 
         <div class="unit-dropdown" id="backLocationHDropdown">
-          <div id="backLocationHDisplay">Select a back location (Hat)</div>
+          <div id="backLocationHDisplay">Select a back location</div>
           <div class="unit-list" id="backLocationHList"></div>
         </div>
         <input type="hidden" id="backLocationH" />
@@ -225,7 +225,7 @@
 
         const dispH3a = document.getElementById('backLocationHDisplay');
         const ddH3a   = document.getElementById('backLocationHDropdown');
-        if (dispH3a) dispH3a.textContent = 'Select a back location (Hat)';
+        if (dispH3a) dispH3a.textContent = 'Select a back location';
         if (ddH3a) ddH3a.classList.remove('open');
         const hiddenH3a = document.getElementById('backLocationH');
         if (hiddenH3a) hiddenH3a.value = '';
@@ -418,7 +418,7 @@
               <span><strong>Hat Size:</strong> ${hatStyle}</span>
               <span><strong>Front Location:</strong> ${frontLocationH}</span>
               <span><strong>Front Graphic:</strong> ${frontGraphicH}</span>
-              <span><strong>Back Location (Hat):</strong> ${backLocationH}</span>
+              <span><strong>Back Location:</strong> ${backLocationH}</span>
               <span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
@@ -491,7 +491,7 @@
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               ${it.frontLocationH ? `Front Location: ${it.frontLocationH}<br>` : ''}
               ${it.frontGraphicH ? `Front Graphic: ${it.frontGraphicH}<br>` : ''}
-              ${it.backLocationH ? `Back Location (Hat): ${it.backLocationH}<br>` : ''}
+              ${it.backLocationH ? `Back Location: ${it.backLocationH}<br>` : ''}
               ${it.backGraphicH ? `Back Graphic (Hat): ${it.backGraphicH}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
