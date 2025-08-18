@@ -318,7 +318,7 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
-      // >>> REPLACED: Require ALL Hat selections to add to cart <<<
+      /* Require ALL selections for both categories to add to cart */
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
@@ -336,27 +336,34 @@
         const backLocationH = document.getElementById('backLocationH').value;
         const backGraphicH  = document.getElementById('backGraphicH').value;
 
-        // Graphic T considered selected if ANY of its fields are chosen (unchanged)
-        const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
+        // Graphic T must be COMPLETE (all fields) to add
+        const gtFields         = [frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut];
+        const hasAnyGraphicT   = gtFields.some(v => !!v);
+        const graphicTComplete = gtFields.every(v => !!v);
 
-        // Hat must be COMPLETE (all fields) to add to cart
-        const hatFields   = [colorH, hatType, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH];
-        const hasAnyHat   = hatFields.some(v => !!v);
-        const hatComplete = hatFields.every(v => !!v);
+        // Hat must be COMPLETE (all fields) to add
+        const hatFields     = [colorH, hatType, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH];
+        const hasAnyHat     = hatFields.some(v => !!v);
+        const hatComplete   = hatFields.every(v => !!v);
 
-        // Prevent mixing categories if user started selecting Hat at all
-        if (hasGraphicT && hasAnyHat) {
+        // Prevent mixing categories if user started both
+        if (hasAnyGraphicT && hasAnyHat) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
           return;
         }
 
-        // Require ALL Hat selections if user is adding a Hat
+        // Enforce completeness
+        if (hasAnyGraphicT && !graphicTComplete) {
+          alert('Please complete ALL Graphic T selections before adding to cart.');
+          return;
+        }
         if (hasAnyHat && !hatComplete) {
           alert('Please complete ALL Hat selections before adding to cart.');
           return;
         }
 
-        const hasHat = hatComplete;
+        const hasGraphicT = graphicTComplete;
+        const hasHat      = hatComplete;
 
         if (!hasGraphicT && !hasHat) {
           alert('Please select either a Graphic T or a Hat option.');
