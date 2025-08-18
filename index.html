@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backGraphicHDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
   </style>
@@ -111,7 +111,13 @@
         </div>
         <input type="hidden" id="frontGraphicH" />
 
-        <!-- NEW: Hat Back Graphic (pulls from "graphic back", saves to graphic_backh) -->
+        <!-- NEW: Hat Back Location (pulls from "back location", saves to back_locationh) -->
+        <div class="unit-dropdown" id="backLocationHDropdown">
+          <div id="backLocationHDisplay">Select a back location (Hat)</div>
+          <div class="unit-list" id="backLocationHList"></div>
+        </div>
+        <input type="hidden" id="backLocationH" />
+
         <div class="unit-dropdown" id="backGraphicHDropdown">
           <div id="backGraphicHDisplay">Select a back graphic (Hat)</div>
           <div class="unit-list" id="backGraphicHList"></div>
@@ -190,7 +196,15 @@
         const hiddenH2 = document.getElementById('frontGraphicH');
         if (hiddenH2) hiddenH2.value = '';
 
-        /* NEW: reset hat back graphic */
+        /* NEW: reset hat back location */
+        const dispH3a = document.getElementById('backLocationHDisplay');
+        const ddH3a   = document.getElementById('backLocationHDropdown');
+        if (dispH3a) dispH3a.textContent = 'Select a back location (Hat)';
+        if (ddH3a) ddH3a.classList.remove('open');
+        const hiddenH3a = document.getElementById('backLocationH');
+        if (hiddenH3a) hiddenH3a.value = '';
+
+        /* existing: back graphic reset */
         const dispH3 = document.getElementById('backGraphicHDisplay');
         const ddH3   = document.getElementById('backGraphicHDropdown');
         if (dispH3) dispH3.textContent = 'Select a back graphic (Hat)';
@@ -267,8 +281,7 @@
 
       await loadOptions('front location', 'frontLocationHList', 'frontLocationHDisplay', 'frontLocationH', 'frontLocationHDropdown');
       await loadOptions('graphic front', 'frontGraphicHList', 'frontGraphicHDisplay', 'frontGraphicH', 'frontGraphicHDropdown');
-
-      /* NEW: load hat back graphics from "graphic back" */
+      await loadOptions('back location', 'backLocationHList', 'backLocationHDisplay', 'backLocationH', 'backLocationHDropdown'); /* NEW */
       await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
 
       const cart = [];
@@ -290,11 +303,11 @@
 
         const frontLocationH = document.getElementById('frontLocationH').value;
         const frontGraphicH = document.getElementById('frontGraphicH').value;
-        /* NEW: hat back graphic value */
+        const backLocationH = document.getElementById('backLocationH').value; /* NEW */
         const backGraphicH = document.getElementById('backGraphicH').value;
 
         const hasGraphicT = !!(frontLocation || frontGraphic || backLocation || backGraphic || size || color || cut);
-        const hasHat = !!hatStyle || !!frontLocationH || !!frontGraphicH || !!backGraphicH;
+        const hasHat = !!hatStyle || !!frontLocationH || !!frontGraphicH || !!backLocationH || !!backGraphicH;
 
         if (hasGraphicT && hasHat) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
@@ -310,7 +323,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, frontLocationH: null, frontGraphicH: null, backGraphicH: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -340,7 +353,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, frontLocationH, frontGraphicH, backGraphicH };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -351,6 +364,7 @@
               <span><strong>Hat Size:</strong> ${hatStyle || '-'}</span>
               ${frontLocationH ? `<span><strong>Front Location (Hat):</strong> ${frontLocationH}</span>` : ''}
               ${frontGraphicH ? `<span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>` : ''}
+              ${backLocationH ? `<span><strong>Back Location (Hat):</strong> ${backLocationH}</span>` : ''} <!-- NEW -->
               ${backGraphicH ? `<span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>` : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
@@ -385,7 +399,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, frontLocationH, frontGraphicH, backGraphicH } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -398,7 +412,7 @@
             hat_size: hatStyle || null,
             front_locationh: frontLocationH || null,
             graphic_fronth: frontGraphicH || null,
-            /* NEW: save hat back graphic */
+            back_locationh: backLocationH || null,   /* NEW */
             graphic_backh: backGraphicH || null,
             price: ITEM_PRICE
           }]);
@@ -419,6 +433,7 @@
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
               ${it.frontLocationH ? `Front Location (Hat): ${it.frontLocationH}<br>` : ''}
               ${it.frontGraphicH ? `Front Graphic (Hat): ${it.frontGraphicH}<br>` : ''}
+              ${it.backLocationH ? `Back Location (Hat): ${it.backLocationH}<br>` : ''}  <!-- NEW -->
               ${it.backGraphicH ? `Back Graphic (Hat): ${it.backGraphicH}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
