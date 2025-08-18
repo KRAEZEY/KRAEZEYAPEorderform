@@ -114,7 +114,7 @@
         <input type="hidden" id="hatStyle" />
 
         <div class="unit-dropdown" id="frontLocationHDropdown">
-          <div id="frontLocationHDisplay">Select a front location (Hat)</div>
+          <div id="frontLocationHDisplay">Select a front location</div>
           <div class="unit-list" id="frontLocationHList"></div>
         </div>
         <input type="hidden" id="frontLocationH" />
@@ -211,7 +211,7 @@
 
         const dispH1 = document.getElementById('frontLocationHDisplay');
         const ddH1   = document.getElementById('frontLocationHDropdown');
-        if (dispH1) dispH1.textContent = 'Select a front location (Hat)';
+        if (dispH1) dispH1.textContent = 'Select a front location';
         if (ddH1) ddH1.classList.remove('open');
         const hiddenH1 = document.getElementById('frontLocationH');
         if (hiddenH1) hiddenH1.value = '';
@@ -416,7 +416,7 @@
               ${colorH ? `<span><strong>Hat Color:</strong> ${colorH}</span>` : ''}
               ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}
               <span><strong>Hat Size:</strong> ${hatStyle}</span>
-              <span><strong>Front Location (Hat):</strong> ${frontLocationH}</span>
+              <span><strong>Front Location:</strong> ${frontLocationH}</span>
               <span><strong>Front Graphic (Hat):</strong> ${frontGraphicH}</span>
               <span><strong>Back Location (Hat):</strong> ${backLocationH}</span>
               <span><strong>Back Graphic (Hat):</strong> ${backGraphicH}</span>
@@ -489,7 +489,7 @@
               ${it.colorH ? `Hat Color: ${it.colorH}<br>` : ''}
               ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
-              ${it.frontLocationH ? `Front Location (Hat): ${it.frontLocationH}<br>` : ''}
+              ${it.frontLocationH ? `Front Location: ${it.frontLocationH}<br>` : ''}
               ${it.frontGraphicH ? `Front Graphic (Hat): ${it.frontGraphicH}<br>` : ''}
               ${it.backLocationH ? `Back Location (Hat): ${it.backLocationH}<br>` : ''}
               ${it.backGraphicH ? `Back Graphic (Hat): ${it.backGraphicH}<br>` : ''}
