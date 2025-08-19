@@ -200,7 +200,6 @@
         </div>
         <input type="hidden" id="rightLegSize" />
 
-        <!-- NEW: Right Leg Graphic -->
         <div class="unit-dropdown" id="rightLegGraphicDropdown">
           <div id="rightLegGraphicDisplay">Select a right leg graphic</div>
           <div class="unit-list" id="rightLegGraphicList"></div>
@@ -466,7 +465,7 @@
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
-      /* Pants (now with Right Leg Graphic) */
+      /* Pants (with right leg size & graphic) */
       await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
       await loadOptions('pant style', 'pantStyleList', 'pantStyleDisplay', 'pantStyle', 'pantStyleDropdown');
       await loadOptions('pant size', 'pantSizeList', 'pantSizeDisplay', 'pantSize', 'pantSizeDropdown');
@@ -502,14 +501,14 @@
         const backLocationH = document.getElementById('backLocationH').value;
         const backGraphicH  = document.getElementById('backGraphicH').value;
 
-        const pantColor     = document.getElementById('pantColor').value;
-        const pantStyle     = document.getElementById('pantStyle').value;
-        const pantSize      = document.getElementById('pantSize').value;
-        const rearSize      = document.getElementById('rearSize').value;
-        const rearGraphic   = document.getElementById('rearGraphic').value;
-        const leftLegSize   = document.getElementById('leftLegSize').value;
-        const leftLegGraphic= document.getElementById('leftLegGraphic').value;
-        const rightLegSize  = document.getElementById('rightLegSize').value;
+        const pantColor       = document.getElementById('pantColor').value;
+        const pantStyle       = document.getElementById('pantStyle').value;
+        const pantSize        = document.getElementById('pantSize').value;
+        const rearSize        = document.getElementById('rearSize').value;
+        const rearGraphic     = document.getElementById('rearGraphic').value;
+        const leftLegSize     = document.getElementById('leftLegSize').value;
+        const leftLegGraphic  = document.getElementById('leftLegGraphic').value;
+        const rightLegSize    = document.getElementById('rightLegSize').value;
         const rightLegGraphic = document.getElementById('rightLegGraphic').value;
 
         // Graphic T completeness
@@ -522,16 +521,19 @@
         const hasAnyHat     = hatFields.some(v => !!v);
         const hatComplete   = hatFields.every(v => !!v);
 
-        // Pants started?
-        const hasPants = !!(pantColor || pantStyle || pantSize || rearSize || rearGraphic || leftLegSize || leftLegGraphic || rightLegSize || rightLegGraphic);
+        // Pants completeness (NEW requirement)
+        const pantsFields   = [pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic];
+        const hasAnyPants   = pantsFields.some(v => !!v);
+        const pantsComplete = pantsFields.every(v => !!v);
 
-        // Prevent mixing categories
-        const pickedCount = (hasAnyGraphicT?1:0) + (hasAnyHat?1:0) + (hasPants?1:0);
+        // Prevent mixing categories if user started more than one
+        const pickedCount = (hasAnyGraphicT?1:0) + (hasAnyHat?1:0) + (hasAnyPants?1:0);
         if (pickedCount > 1) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
           return;
         }
 
+        // Enforce completeness
         if (hasAnyGraphicT && !graphicTComplete) {
           alert('Please complete ALL Graphic T selections before adding to cart.');
           return;
@@ -540,9 +542,14 @@
           alert('Please complete ALL Hat selections before adding to cart.');
           return;
         }
+        if (hasAnyPants && !pantsComplete) {
+          alert('Please complete ALL Pants selections before adding to cart.');
+          return;
+        }
 
         const hasGraphicT = graphicTComplete;
         const hasHat      = hatComplete;
+        const hasPants    = pantsComplete;
 
         if (!hasGraphicT && !hasHat && !hasPants) {
           alert('Please select either a Graphic T or a Hat option.');
