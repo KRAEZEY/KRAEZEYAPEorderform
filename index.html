@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
 
@@ -150,6 +150,15 @@
         <input type="hidden" id="backGraphicH" />
       </div>
 
+      <!-- Pants Section -->
+      <div id="pantsSection" style="display:none;">
+        <div class="unit-dropdown" id="pantColorDropdown">
+          <div id="pantColorDisplay">Select a pants color</div>
+          <div class="unit-list" id="pantColorList"></div>
+        </div>
+        <input type="hidden" id="pantColor" />
+      </div>
+
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
@@ -249,16 +258,27 @@
         const hiddenH3 = document.getElementById('backGraphicH');
         if (hiddenH3) hiddenH3.value = '';
       }
+      function clearPantsSelections() {
+        const disp = document.getElementById('pantColorDisplay');
+        const dd   = document.getElementById('pantColorDropdown');
+        if (disp) disp.textContent = 'Select a pants color';
+        if (dd) dd.classList.remove('open');
+        const hidden = document.getElementById('pantColor');
+        if (hidden) hidden.value = '';
+      }
 
       // Toggle sections (mutually exclusive)
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
         const gSec = document.getElementById('graphicsSection');
         const hSec = document.getElementById('hatSection');
+        const pSec = document.getElementById('pantsSection');
         const gHidden = !(gSec.style.display === 'none' || gSec.style.display === '');
         gSec.style.display = gHidden ? 'none' : 'block';
         if (!gHidden) {
           hSec.style.display = 'none';
+          pSec.style.display = 'none';
           clearHatSelections();
+          clearPantsSelections();
         } else {
           clearGraphicsSelections();
         }
@@ -266,13 +286,31 @@
       document.getElementById('showHatBtn').addEventListener('click', () => {
         const gSec = document.getElementById('graphicsSection');
         const hSec = document.getElementById('hatSection');
+        const pSec = document.getElementById('pantsSection');
         const hHidden = !(hSec.style.display === 'none' || hSec.style.display === '');
         hSec.style.display = hHidden ? 'none' : 'block';
         if (!hHidden) {
           gSec.style.display = 'none';
+          pSec.style.display = 'none';
           clearGraphicsSelections();
+          clearPantsSelections();
         } else {
           clearHatSelections();
+        }
+      });
+      document.getElementById('showPantsBtn').addEventListener('click', () => {
+        const gSec = document.getElementById('graphicsSection');
+        const hSec = document.getElementById('hatSection');
+        const pSec = document.getElementById('pantsSection');
+        const pHidden = !(pSec.style.display === 'none' || pSec.style.display === '');
+        pSec.style.display = pHidden ? 'none' : 'block';
+        if (!pHidden) {
+          gSec.style.display = 'none';
+          hSec.style.display = 'none';
+          clearGraphicsSelections();
+          clearHatSelections();
+        } else {
+          clearPantsSelections();
         }
       });
 
@@ -323,6 +361,9 @@
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
+      /* Pants: load from "pant color" */
+      await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
+
       const cart = [];
 
       function updateCartTotal() {
@@ -330,7 +371,8 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
-      /* Require ALL selections for both categories to add to cart */
+      /* Require ALL selections for both categories to add to cart (existing behavior).
+         Pants: single selection allowed; mixing categories prevented like before. */
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
@@ -348,6 +390,8 @@
         const backLocationH = document.getElementById('backLocationH').value;
         const backGraphicH  = document.getElementById('backGraphicH').value;
 
+        const pantColor     = document.getElementById('pantColor').value;
+
         // Graphic T must be COMPLETE (all fields) to add
         const gtFields         = [frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut];
         const hasAnyGraphicT   = gtFields.some(v => !!v);
@@ -358,13 +402,17 @@
         const hasAnyHat     = hatFields.some(v => !!v);
         const hatComplete   = hatFields.every(v => !!v);
 
-        // Prevent mixing categories if user started both
-        if (hasAnyGraphicT && hasAnyHat) {
+        // Pants (single required field)
+        const hasPants      = !!pantColor;
+
+        // Prevent mixing categories if user started multiple
+        const pickedCount = (hasAnyGraphicT?1:0) + (hasAnyHat?1:0) + (hasPants?1:0);
+        if (pickedCount > 1) {
           alert('Please choose either a Graphic T or a Hat, not both at the same time.');
           return;
         }
 
-        // Enforce completeness
+        // Enforce completeness for T/H
         if (hasAnyGraphicT && !graphicTComplete) {
           alert('Please complete ALL Graphic T selections before adding to cart.');
           return;
@@ -377,7 +425,7 @@
         const hasGraphicT = graphicTComplete;
         const hasHat      = hatComplete;
 
-        if (!hasGraphicT && !hasHat) {
+        if (!hasGraphicT && !hasHat && !hasPants) {
           alert('Please select either a Graphic T or a Hat option.');
           return;
         }
@@ -387,7 +435,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -417,7 +465,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -446,6 +494,30 @@
           cartList.appendChild(liHat);
         }
 
+        if (hasPants) {
+          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor };
+          cart.push(itemPants);
+
+          const liPants = document.createElement('li');
+          liPants.className = 'list-group-item d-flex justify-content-between align-items-start';
+          liPants.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <span><strong>Item:</strong> Pants</span>
+              <span><strong>Pant Color:</strong> ${pantColor}</span>
+              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+            </div>
+            <button class="btn btn-sm btn-danger">X</button>
+          `;
+          liPants.querySelector('button').addEventListener('click', () => {
+            const index = cart.indexOf(itemPants);
+            if (index > -1) cart.splice(index, 1);
+            liPants.remove();
+            if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
+            updateCartTotal();
+          });
+          cartList.appendChild(liPants);
+        }
+
         updateCartTotal();
       });
 
@@ -465,7 +537,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -482,6 +554,7 @@
             graphic_fronth: frontGraphicH || null,
             back_locationh: backLocationH || null,
             graphic_backh: backGraphicH || null,
+            pant_color: pantColor || null,
             price: ITEM_PRICE
           }]);
         }
@@ -505,6 +578,7 @@
               ${it.frontGraphicH ? `Front Graphic: ${it.frontGraphicH}<br>` : ''}
               ${it.backLocationH ? `Back Location: ${it.backLocationH}<br>` : ''}
               ${it.backGraphicH ? `Back Graphic: ${it.backGraphicH}<br>` : ''}
+              ${it.pantColor ? `Pant Color: ${it.pantColor}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
@@ -531,8 +605,10 @@
         // Reset selections/sections
         clearGraphicsSelections();
         clearHatSelections();
+        clearPantsSelections();
         document.getElementById('graphicsSection').style.display = 'none';
         document.getElementById('hatSection').style.display = 'none';
+        document.getElementById('pantsSection').style.display = 'none';
       });
     });
   </script>
