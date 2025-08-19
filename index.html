@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
 
@@ -157,6 +157,12 @@
           <div class="unit-list" id="pantColorList"></div>
         </div>
         <input type="hidden" id="pantColor" />
+
+        <div class="unit-dropdown" id="pantStyleDropdown">
+          <div id="pantStyleDisplay">Select a pants style</div>
+          <div class="unit-list" id="pantStyleList"></div>
+        </div>
+        <input type="hidden" id="pantStyle" />
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
@@ -167,7 +173,7 @@
       purchase successful!<br>Email Sent!
     </div>
 
-    <div class="mt-4 text-start" id="cartSection" style="display: none;">
+    <div class="mt-4 text-start" id="cartSection" style="display: none%;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
       <div id="cartTotal" class="mt-2 fw-bold"></div>
@@ -259,12 +265,19 @@
         if (hiddenH3) hiddenH3.value = '';
       }
       function clearPantsSelections() {
-        const disp = document.getElementById('pantColorDisplay');
-        const dd   = document.getElementById('pantColorDropdown');
-        if (disp) disp.textContent = 'Select a pants color';
-        if (dd) dd.classList.remove('open');
-        const hidden = document.getElementById('pantColor');
-        if (hidden) hidden.value = '';
+        const dispC = document.getElementById('pantColorDisplay');
+        const ddC   = document.getElementById('pantColorDropdown');
+        if (dispC) dispC.textContent = 'Select a pants color';
+        if (ddC) ddC.classList.remove('open');
+        const hiddenC = document.getElementById('pantColor');
+        if (hiddenC) hiddenC.value = '';
+
+        const dispS = document.getElementById('pantStyleDisplay');
+        const ddS   = document.getElementById('pantStyleDropdown');
+        if (dispS) dispS.textContent = 'Select a pants style';
+        if (ddS) ddS.classList.remove('open');
+        const hiddenS = document.getElementById('pantStyle');
+        if (hiddenS) hiddenS.value = '';
       }
 
       // Toggle sections (mutually exclusive)
@@ -361,8 +374,9 @@
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
-      /* Pants: load from "pant color" */
+      /* Pants: load from "pant color" and "pant style" */
       await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
+      await loadOptions('pant style', 'pantStyleList', 'pantStyleDisplay', 'pantStyle', 'pantStyleDropdown');
 
       const cart = [];
 
@@ -371,8 +385,7 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
-      /* Require ALL selections for both categories to add to cart (existing behavior).
-         Pants: single selection allowed; mixing categories prevented like before. */
+      /* Add to Cart */
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
@@ -391,6 +404,7 @@
         const backGraphicH  = document.getElementById('backGraphicH').value;
 
         const pantColor     = document.getElementById('pantColor').value;
+        const pantStyle     = document.getElementById('pantStyle').value;
 
         // Graphic T must be COMPLETE (all fields) to add
         const gtFields         = [frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut];
@@ -402,8 +416,8 @@
         const hasAnyHat     = hatFields.some(v => !!v);
         const hatComplete   = hatFields.every(v => !!v);
 
-        // Pants (single required field)
-        const hasPants      = !!pantColor;
+        // Pants (any pants field counts as started)
+        const hasPants      = !!(pantColor || pantStyle);
 
         // Prevent mixing categories if user started multiple
         const pickedCount = (hasAnyGraphicT?1:0) + (hasAnyHat?1:0) + (hasPants?1:0);
@@ -412,7 +426,7 @@
           return;
         }
 
-        // Enforce completeness for T/H
+        // Enforce completeness for T/H (unchanged)
         if (hasAnyGraphicT && !graphicTComplete) {
           alert('Please complete ALL Graphic T selections before adding to cart.');
           return;
@@ -435,7 +449,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -465,7 +479,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -495,7 +509,7 @@
         }
 
         if (hasPants) {
-          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor };
+          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle };
           cart.push(itemPants);
 
           const liPants = document.createElement('li');
@@ -503,7 +517,8 @@
           liPants.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Pants</span>
-              <span><strong>Pant Color:</strong> ${pantColor}</span>
+              ${pantColor ? `<span><strong>Pant Color:</strong> ${pantColor}</span>` : ''}
+              ${pantStyle ? `<span><strong>Pant Style:</strong> ${pantStyle}</span>` : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -537,7 +552,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -555,6 +570,7 @@
             back_locationh: backLocationH || null,
             graphic_backh: backGraphicH || null,
             pant_color: pantColor || null,
+            pant_style: pantStyle || null,
             price: ITEM_PRICE
           }]);
         }
@@ -579,6 +595,7 @@
               ${it.backLocationH ? `Back Location: ${it.backLocationH}<br>` : ''}
               ${it.backGraphicH ? `Back Graphic: ${it.backGraphicH}<br>` : ''}
               ${it.pantColor ? `Pant Color: ${it.pantColor}<br>` : ''}
+              ${it.pantStyle ? `Pant Style: ${it.pantStyle}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
