@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay, #pantSizeDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
 
@@ -163,6 +163,12 @@
           <div class="unit-list" id="pantStyleList"></div>
         </div>
         <input type="hidden" id="pantStyle" />
+
+        <div class="unit-dropdown" id="pantSizeDropdown">
+          <div id="pantSizeDisplay">Select a pants size</div>
+          <div class="unit-list" id="pantSizeList"></div>
+        </div>
+        <input type="hidden" id="pantSize" />
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
@@ -278,6 +284,13 @@
         if (ddS) ddS.classList.remove('open');
         const hiddenS = document.getElementById('pantStyle');
         if (hiddenS) hiddenS.value = '';
+
+        const dispZ = document.getElementById('pantSizeDisplay');
+        const ddZ   = document.getElementById('pantSizeDropdown');
+        if (dispZ) dispZ.textContent = 'Select a pants size';
+        if (ddZ) ddZ.classList.remove('open');
+        const hiddenZ = document.getElementById('pantSize');
+        if (hiddenZ) hiddenZ.value = '';
       }
 
       // Toggle sections (mutually exclusive)
@@ -374,9 +387,10 @@
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
-      /* Pants: load from "pant color" and "pant style" */
+      /* Pants: load from "pant color", "pant style", and "pant size" */
       await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
       await loadOptions('pant style', 'pantStyleList', 'pantStyleDisplay', 'pantStyle', 'pantStyleDropdown');
+      await loadOptions('pant size', 'pantSizeList', 'pantSizeDisplay', 'pantSize', 'pantSizeDropdown');
 
       const cart = [];
 
@@ -405,6 +419,7 @@
 
         const pantColor     = document.getElementById('pantColor').value;
         const pantStyle     = document.getElementById('pantStyle').value;
+        const pantSize      = document.getElementById('pantSize').value;
 
         // Graphic T must be COMPLETE (all fields) to add
         const gtFields         = [frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut];
@@ -417,7 +432,7 @@
         const hatComplete   = hatFields.every(v => !!v);
 
         // Pants (any pants field counts as started)
-        const hasPants      = !!(pantColor || pantStyle);
+        const hasPants      = !!(pantColor || pantStyle || pantSize);
 
         // Prevent mixing categories if user started multiple
         const pickedCount = (hasAnyGraphicT?1:0) + (hasAnyHat?1:0) + (hasPants?1:0);
@@ -449,7 +464,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -479,7 +494,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -509,7 +524,7 @@
         }
 
         if (hasPants) {
-          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle };
+          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize };
           cart.push(itemPants);
 
           const liPants = document.createElement('li');
@@ -519,6 +534,7 @@
               <span><strong>Item:</strong> Pants</span>
               ${pantColor ? `<span><strong>Pant Color:</strong> ${pantColor}</span>` : ''}
               ${pantStyle ? `<span><strong>Pant Style:</strong> ${pantStyle}</span>` : ''}
+              ${pantSize ? `<span><strong>Pant Size:</strong> ${pantSize}</span>` : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -552,7 +568,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -571,6 +587,7 @@
             graphic_backh: backGraphicH || null,
             pant_color: pantColor || null,
             pant_style: pantStyle || null,
+            pant_size: pantSize || null,
             price: ITEM_PRICE
           }]);
         }
@@ -596,6 +613,7 @@
               ${it.backGraphicH ? `Back Graphic: ${it.backGraphicH}<br>` : ''}
               ${it.pantColor ? `Pant Color: ${it.pantColor}<br>` : ''}
               ${it.pantStyle ? `Pant Style: ${it.pantStyle}<br>` : ''}
+              ${it.pantSize ? `Pant Size: ${it.pantSize}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
