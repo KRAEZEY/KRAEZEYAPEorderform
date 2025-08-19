@@ -19,7 +19,7 @@
     .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay, #pantSizeDisplay, #rearSizeDisplay, #rearGraphicDisplay, #leftLegSizeDisplay, #leftLegGraphicDisplay, #rightLegSizeDisplay {
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay, #pantSizeDisplay, #rearSizeDisplay, #rearGraphicDisplay, #leftLegSizeDisplay, #leftLegGraphicDisplay, #rightLegSizeDisplay, #rightLegGraphicDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
 
@@ -194,12 +194,18 @@
         </div>
         <input type="hidden" id="leftLegGraphic" />
 
-        <!-- NEW: Right Leg Size -->
         <div class="unit-dropdown" id="rightLegSizeDropdown">
           <div id="rightLegSizeDisplay">Select a right leg size</div>
           <div class="unit-list" id="rightLegSizeList"></div>
         </div>
         <input type="hidden" id="rightLegSize" />
+
+        <!-- NEW: Right Leg Graphic -->
+        <div class="unit-dropdown" id="rightLegGraphicDropdown">
+          <div id="rightLegGraphicDisplay">Select a right leg graphic</div>
+          <div class="unit-list" id="rightLegGraphicList"></div>
+        </div>
+        <input type="hidden" id="rightLegGraphic" />
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
@@ -357,6 +363,13 @@
         if (ddRL) ddRL.classList.remove('open');
         const hiddenRL = document.getElementById('rightLegSize');
         if (hiddenRL) hiddenRL.value = '';
+
+        const dispRLG = document.getElementById('rightLegGraphicDisplay');
+        const ddRLG   = document.getElementById('rightLegGraphicDropdown');
+        if (dispRLG) dispRLG.textContent = 'Select a right leg graphic';
+        if (ddRLG) ddRLG.classList.remove('open');
+        const hiddenRLG = document.getElementById('rightLegGraphic');
+        if (hiddenRLG) hiddenRLG.value = '';
       }
 
       // Toggle sections (mutually exclusive)
@@ -453,7 +466,7 @@
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
-      /* Pants: including NEW "right leg size" */
+      /* Pants (now with Right Leg Graphic) */
       await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
       await loadOptions('pant style', 'pantStyleList', 'pantStyleDisplay', 'pantStyle', 'pantStyleDropdown');
       await loadOptions('pant size', 'pantSizeList', 'pantSizeDisplay', 'pantSize', 'pantSizeDropdown');
@@ -462,6 +475,7 @@
       await loadOptions('left leg size', 'leftLegSizeList', 'leftLegSizeDisplay', 'leftLegSize', 'leftLegSizeDropdown');
       await loadOptions('left leg graphic', 'leftLegGraphicList', 'leftLegGraphicDisplay', 'leftLegGraphic', 'leftLegGraphicDropdown');
       await loadOptions('right leg size', 'rightLegSizeList', 'rightLegSizeDisplay', 'rightLegSize', 'rightLegSizeDropdown');
+      await loadOptions('right leg graphic', 'rightLegGraphicList', 'rightLegGraphicDisplay', 'rightLegGraphic', 'rightLegGraphicDropdown');
 
       const cart = [];
 
@@ -496,19 +510,20 @@
         const leftLegSize   = document.getElementById('leftLegSize').value;
         const leftLegGraphic= document.getElementById('leftLegGraphic').value;
         const rightLegSize  = document.getElementById('rightLegSize').value;
+        const rightLegGraphic = document.getElementById('rightLegGraphic').value;
 
-        // Graphic T completeness (unchanged)
+        // Graphic T completeness
         const gtFields         = [frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut];
         const hasAnyGraphicT   = gtFields.some(v => !!v);
         const graphicTComplete = gtFields.every(v => !!v);
 
-        // Hat completeness (unchanged)
+        // Hat completeness
         const hatFields     = [colorH, hatType, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH];
         const hasAnyHat     = hatFields.some(v => !!v);
         const hatComplete   = hatFields.every(v => !!v);
 
         // Pants started?
-        const hasPants      = !!(pantColor || pantStyle || pantSize || rearSize || rearGraphic || leftLegSize || leftLegGraphic || rightLegSize);
+        const hasPants = !!(pantColor || pantStyle || pantSize || rearSize || rearGraphic || leftLegSize || leftLegGraphic || rightLegSize || rightLegGraphic);
 
         // Prevent mixing categories
         const pickedCount = (hasAnyGraphicT?1:0) + (hasAnyHat?1:0) + (hasPants?1:0);
@@ -539,7 +554,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -569,7 +584,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -599,7 +614,7 @@
         }
 
         if (hasPants) {
-          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize };
+          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
           cart.push(itemPants);
 
           const liPants = document.createElement('li');
@@ -615,6 +630,7 @@
               ${leftLegSize ? `<span><strong>Left Leg Size:</strong> ${leftLegSize}</span>` : ''}
               ${leftLegGraphic ? `<span><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</span>` : ''}
               ${rightLegSize ? `<span><strong>Right Leg Size:</strong> ${rightLegSize}</span>` : ''}
+              ${rightLegGraphic ? `<span><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</span>` : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -648,7 +664,7 @@
 
         // Insert each item into Supabase
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -673,6 +689,7 @@
             leftleg_size: leftLegSize || null,
             leftleg_graphic: leftLegGraphic || null,
             rightleg_size: rightLegSize || null,
+            rightleg_graphic: rightLegGraphic || null,
             price: ITEM_PRICE
           }]);
         }
@@ -704,6 +721,7 @@
               ${it.leftLegSize ? `Left Leg Size: ${it.leftLegSize}<br>` : ''}
               ${it.leftLegGraphic ? `Left Leg Graphic: ${it.leftLegGraphic}<br>` : ''}
               ${it.rightLegSize ? `Right Leg Size: ${it.rightLegSize}<br>` : ''}
+              ${it.rightLegGraphic ? `Right Leg Graphic: ${it.rightLegGraphic}<br>` : ''}
               Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
