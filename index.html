@@ -58,7 +58,7 @@
         <button type="button" id="showPantsBtn" class="btn btn-success w-100">Pants</button>
       </div>
 
-      <!-- Graphic T Section (order already set to: Cut, Color, Size, FL, FG, BL, BG) -->
+      <!-- Graphic T Section (order: Cut, Color, Size, FL, FG, BL, BG) -->
       <div id="graphicsSection" style="display:none;">
         <div class="unit-dropdown" id="cutDropdown">
           <div id="cutDisplay">Select a cut</div>
@@ -103,7 +103,7 @@
         <input type="hidden" id="backGraphic" />
       </div>
 
-      <!-- Hat Section (Hat Type moved first) -->
+      <!-- Hat Section (Hat Type first) -->
       <div id="hatSection" style="display:none;">
         <!-- Hat Type FIRST -->
         <div class="unit-dropdown" id="hatTypeDropdown">
@@ -119,7 +119,7 @@
         </div>
         <input type="hidden" id="colorH" />
 
-        <!-- Hat Size -->
+        <!-- Hat Size (hidden when Snap Back) -->
         <div class="unit-dropdown" id="hatStyleDropdown">
           <div id="hatStyleDisplay">Select a hat size</div>
           <div class="unit-list" id="hatStyleList"></div>
@@ -258,6 +258,7 @@
         });
         hiddens.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       }
+
       function clearHatSelections() {
         const dispColor = document.getElementById('hatColorHDisplay');
         const ddColor   = document.getElementById('hatColorHDropdown');
@@ -279,6 +280,8 @@
         if (dd) dd.classList.remove('open');
         const hidden = document.getElementById('hatStyle');
         if (hidden) hidden.value = '';
+        if (dd) dd.style.display = '';      // ensure row is visible after reset
+        updateHatSizeVisibility();          // normalize visibility after reset
 
         const dispH1 = document.getElementById('frontLocationHDisplay');
         const ddH1   = document.getElementById('frontLocationHDropdown');
@@ -308,6 +311,7 @@
         const hiddenH3 = document.getElementById('backGraphicH');
         if (hiddenH3) hiddenH3.value = '';
       }
+
       function clearPantsSelections() {
         const dispC = document.getElementById('pantColorDisplay');
         const ddC   = document.getElementById('pantColorDropdown');
@@ -372,6 +376,29 @@
         const hiddenRLG = document.getElementById('rightLegGraphic');
         if (hiddenRLG) hiddenRLG.value = '';
       }
+
+      /* ===== NEW: Hide/skip Hat Size for Snap Back ===== */
+      function updateHatSizeVisibility() {
+        const hatTypeVal = (document.getElementById('hatType').value || '')
+          .replace(/\s+/g, '')
+          .toLowerCase(); // "snapback" matches "Snap Back" or "Snapback"
+        const isSnapBack = hatTypeVal === 'snapback';
+
+        const hatSizeDd = document.getElementById('hatStyleDropdown');
+        const hatStyleInput = document.getElementById('hatStyle');
+        const hatStyleDisplay = document.getElementById('hatStyleDisplay');
+        if (!hatSizeDd || !hatStyleInput || !hatStyleDisplay) return;
+
+        if (isSnapBack) {
+          hatSizeDd.style.display = 'none';
+          hatStyleInput.value = ''; // not required
+          hatStyleDisplay.textContent = 'Hat size not required';
+        } else {
+          hatSizeDd.style.display = '';
+          if (!hatStyleInput.value) hatStyleDisplay.textContent = 'Select a hat size';
+        }
+      }
+      /* ===== END NEW ===== */
 
       // Toggle sections (mutually exclusive)
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
@@ -478,6 +505,12 @@
       await loadOptions('right leg size', 'rightLegSizeList', 'rightLegSizeDisplay', 'rightLegSize', 'rightLegSizeDropdown');
       await loadOptions('right leg graphic', 'rightLegGraphicList', 'rightLegGraphicDisplay', 'rightLegGraphic', 'rightLegGraphicDropdown');
 
+      /* ===== NEW: react to hat type selection to toggle size visibility ===== */
+      document.getElementById('hatTypeList')
+        .addEventListener('click', () => setTimeout(updateHatSizeVisibility, 0));
+      updateHatSizeVisibility();
+      /* ===== END NEW ===== */
+
       const cart = [];
 
       function updateCartTotal() {
@@ -518,10 +551,16 @@
         const hasAnyGraphicT   = gtFields.some(v => !!v);
         const graphicTComplete = gtFields.every(v => !!v);
 
-        // Hat completeness
-        const hatFields     = [colorH, hatType, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH];
-        const hasAnyHat     = hatFields.some(v => !!v);
-        const hatComplete   = hatFields.every(v => !!v);
+        /* ===== NEW: Hat completeness (Hat Size not required for Snap Back) ===== */
+        const hatTypeNormalized = (hatType || '').replace(/\s+/g, '').toLowerCase();
+        const requireHatSize = hatTypeNormalized !== 'snapback';
+        const hatFields = requireHatSize
+          ? [colorH, hatType, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH]
+          : [colorH, hatType,          frontLocationH, frontGraphicH, backLocationH, backGraphicH];
+
+        const hasAnyHat   = hatFields.some(v => !!v) || (!!hatType);
+        const hatComplete = hatFields.every(v => !!v);
+        /* ===== END NEW ===== */
 
         // Pants completeness
         const pantsFields   = [pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic];
