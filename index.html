@@ -58,51 +58,44 @@
         <button type="button" id="showPantsBtn" class="btn btn-success w-100">Pants</button>
       </div>
 
-      <!-- Graphic T Section (REORDERED ONLY) -->
+      <!-- Graphic T Section (order already set to: Cut, Color, Size, FL, FG, BL, BG) -->
       <div id="graphicsSection" style="display:none;">
-        <!-- Cut -->
         <div class="unit-dropdown" id="cutDropdown">
           <div id="cutDisplay">Select a cut</div>
           <div class="unit-list" id="cutList"></div>
         </div>
         <input type="hidden" id="cut" />
 
-        <!-- Color -->
         <div class="unit-dropdown" id="colorDropdown">
           <div id="colorDisplay">Select a color</div>
           <div class="unit-list" id="colorList"></div>
         </div>
         <input type="hidden" id="color" />
 
-        <!-- Size -->
         <div class="unit-dropdown" id="sizeDropdown">
           <div id="sizeDisplay">Select a size</div>
           <div class="unit-list" id="sizeList"></div>
         </div>
         <input type="hidden" id="size" />
 
-        <!-- Front Location -->
         <div class="unit-dropdown" id="frontLocationDropdown">
           <div id="frontLocationDisplay">Select a front location</div>
           <div class="unit-list" id="frontLocationList"></div>
         </div>
         <input type="hidden" id="frontLocation" />
 
-        <!-- Front Graphic -->
         <div class="unit-dropdown" id="frontGraphicDropdown">
           <div id="frontGraphicDisplay">Select a front graphic</div>
           <div class="unit-list" id="frontGraphicList"></div>
         </div>
         <input type="hidden" id="frontGraphic" />
 
-        <!-- Back Location -->
         <div class="unit-dropdown" id="backLocationDropdown">
           <div id="backLocationDisplay">Select a back location</div>
           <div class="unit-list" id="backLocationList"></div>
         </div>
         <input type="hidden" id="backLocation" />
 
-        <!-- Back Graphic -->
         <div class="unit-dropdown" id="backGraphicDropdown">
           <div id="backGraphicDisplay">Select a back graphic</div>
           <div class="unit-list" id="backGraphicList"></div>
@@ -112,14 +105,12 @@
 
       <!-- Hat Section -->
       <div id="hatSection" style="display:none;">
-        <!-- Hat Color (pulls from "color", saves to color_h) -->
         <div class="unit-dropdown" id="hatColorHDropdown">
           <div id="hatColorHDisplay">Select a hat color</div>
           <div class="unit-list" id="hatColorHList"></div>
         </div>
         <input type="hidden" id="colorH" />
 
-        <!-- Hat Type (pulls from "hat type", saves to hat_type) -->
         <div class="unit-dropdown" id="hatTypeDropdown">
           <div id="hatTypeDisplay">Select a hat type</div>
           <div class="unit-list" id="hatTypeList"></div>
@@ -576,13 +567,13 @@
           liGT.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Graphic T</span>
+              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>`      : ''}
+              ${color ? `<span><strong>Color:</strong> ${color}</span>`: ''}
+              ${size ? `<span><strong>Size:</strong> ${size}</span>`   : ''}
               ${frontLocation ? `<span><strong>Front Location:</strong> ${frontLocation}</span>` : ''}
               ${frontGraphic  ? `<span><strong>Front Graphic:</strong> ${frontGraphic}</span>`   : ''}
               ${backLocation  ? `<span><strong>Back Location:</strong> ${backLocation}</span>`   : ''}
               ${backGraphic   ? `<span><strong>Back Graphic:</strong> ${backGraphic}</span>`     : ''}
-              ${size ? `<span><strong>Size:</strong> ${size}</span>`   : ''}
-              ${color ? `<span><strong>Color:</strong> ${color}</span>`: ''}
-              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>`      : ''}
               <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
             <button class="btn btn-sm btn-danger">X</button>
@@ -713,13 +704,13 @@
           ${cart.map((it, idx) =>
             `<li>
               ${it.type ? `Item: ${it.type}<br>` : ''}
+              ${it.cut ? `Cut: ${it.cut}<br>` : ''}
+              ${it.color ? `Color: ${it.color}<br>` : ''}
+              ${it.size ? `Size: ${it.size}<br>` : ''}
               ${it.frontLocation ? `Front Location: ${it.frontLocation}<br>` : ''}
               ${it.frontGraphic ? `Front Graphic: ${it.frontGraphic}<br>` : ''}
               ${it.backLocation ? `Back Location: ${it.backLocation}<br>` : ''}
               ${it.backGraphic ? `Back Graphic: ${it.backGraphic}<br>` : ''}
-              ${it.size ? `Size: ${it.size}<br>` : ''}
-              ${it.color ? `Color: ${it.color}<br>` : ''}
-              ${it.cut ? `Cut: ${it.cut}<br>` : ''}
               ${it.colorH ? `Hat Color: ${it.colorH}<br>` : ''}
               ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}
               ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
