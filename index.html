@@ -112,7 +112,7 @@
         </div>
         <input type="hidden" id="hatType" />
 
-        <!-- Hat Color -->
+        <!-- Hat Color (table depends on Hat Type) -->
         <div class="unit-dropdown" id="hatColorHDropdown">
           <div id="hatColorHDisplay">Select a hat color</div>
           <div class="unit-list" id="hatColorHList"></div>
@@ -377,7 +377,7 @@
         if (hiddenRLG) hiddenRLG.value = '';
       }
 
-      /* ===== NEW: Hide/skip Hat Size for Snap Back ===== */
+      /* ===== Existing: Hide/skip Hat Size for Snap Back ===== */
       function updateHatSizeVisibility() {
         const hatTypeVal = (document.getElementById('hatType').value || '')
           .replace(/\s+/g, '')
@@ -397,6 +397,42 @@
           hatSizeDd.style.display = '';
           if (!hatStyleInput.value) hatStyleDisplay.textContent = 'Select a hat size';
         }
+      }
+
+      /* ===== NEW: reload Hat Color options based on Hat Type ===== */
+      async function reloadHatColorOptions(sourceTable) {
+        const list = document.getElementById('hatColorHList');
+        const display = document.getElementById('hatColorHDisplay');
+        const hidden = document.getElementById('colorH');
+        if (!list || !display || !hidden) return;
+
+        // reset UI
+        list.innerHTML = '';
+        hidden.value = '';
+        display.textContent = 'Select a hat color';
+
+        const { data } = await supabase
+          .from(sourceTable)
+          .select('name, thumbnail_url')
+          .order('order', { ascending: true });
+
+        (data || []).forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'unit-option';
+          div.innerHTML = `<img src="${item.thumbnail_url || ''}" alt="${item.name}" /><span>${item.name}</span>`;
+          div.addEventListener('click', () => {
+            display.textContent = item.name;
+            hidden.value = item.name;
+            document.getElementById('hatColorHDropdown').classList.remove('open');
+          });
+          list.appendChild(div);
+        });
+      }
+
+      function updateHatColorSource() {
+        const hatTypeVal = (document.getElementById('hatType').value || '').replace(/\s+/g, '').toLowerCase();
+        const table = hatTypeVal === 'flexfit' ? 'flex color' : 'color'; // default to "color"
+        reloadHatColorOptions(table);
       }
       /* ===== END NEW ===== */
 
@@ -492,6 +528,8 @@
       await loadOptions('back location', 'backLocationHList', 'backLocationHDisplay', 'backLocationH', 'backLocationHDropdown');
       await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
+
+      /* Initially load Hat Color from "color"; will swap based on Hat Type after selection */
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
       /* Pants */
@@ -505,11 +543,16 @@
       await loadOptions('right leg size', 'rightLegSizeList', 'rightLegSizeDisplay', 'rightLegSize', 'rightLegSizeDropdown');
       await loadOptions('right leg graphic', 'rightLegGraphicList', 'rightLegGraphicDisplay', 'rightLegGraphic', 'rightLegGraphicDropdown');
 
-      /* ===== NEW: react to hat type selection to toggle size visibility ===== */
+      /* React to Hat Type selection: toggle size + pick hat color source table */
       document.getElementById('hatTypeList')
-        .addEventListener('click', () => setTimeout(updateHatSizeVisibility, 0));
+        .addEventListener('click', () => setTimeout(() => {
+          updateHatSizeVisibility();
+          updateHatColorSource();
+        }, 0));
+
+      /* Ensure correct initial state (in case hat type preselected) */
       updateHatSizeVisibility();
-      /* ===== END NEW ===== */
+      updateHatColorSource();
 
       const cart = [];
 
@@ -551,7 +594,7 @@
         const hasAnyGraphicT   = gtFields.some(v => !!v);
         const graphicTComplete = gtFields.every(v => !!v);
 
-        /* ===== NEW: Hat completeness (Hat Size not required for Snap Back) ===== */
+        // Hat completeness (Hat Size not required for Snap Back)
         const hatTypeNormalized = (hatType || '').replace(/\s+/g, '').toLowerCase();
         const requireHatSize = hatTypeNormalized !== 'snapback';
         const hatFields = requireHatSize
@@ -560,7 +603,6 @@
 
         const hasAnyHat   = hatFields.some(v => !!v) || (!!hatType);
         const hatComplete = hatFields.every(v => !!v);
-        /* ===== END NEW ===== */
 
         // Pants completeness
         const pantsFields   = [pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic];
