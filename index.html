@@ -7,16 +7,15 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   <style>
     body {
-      /* Photographic banana background */
+      /* Photographic banana background using your Getty URL */
       background-image:
         linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.08)),
-        url("https://images.unsplash.com/photo-1574226516831-e1dff420e38e?auto=format&fit=crop&w=1920&q=80");
+        url("https://www.gettyimages.com/detail/illustration/banana-fruit-pattern-royalty-free-illustration/1181266806");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
       background-repeat: no-repeat;
 
-      /* keep original body fallback theme color */
       background-color: #f8f9fa;
       font-family: Arial, sans-serif;
     }
@@ -39,12 +38,12 @@
 
     /* Pink with black letters for the "Pants" button */
     #showPantsBtn.btn-success {
-      background-color: #FFC0CB; /* pink */
+      background-color: #FFC0CB;
       border: none;
-      color: #000;               /* black text */
+      color: #000;
     }
     #showPantsBtn.btn-success:hover {
-      background-color: #FFB6C1; /* slightly darker pink on hover */
+      background-color: #FFB6C1;
       color: #000;
     }
   </style>
@@ -119,28 +118,24 @@
 
       <!-- Hat Section (Hat Type first) -->
       <div id="hatSection" style="display:none;">
-        <!-- Hat Type FIRST -->
         <div class="unit-dropdown" id="hatTypeDropdown">
           <div id="hatTypeDisplay">Select a hat type</div>
           <div class="unit-list" id="hatTypeList"></div>
         </div>
         <input type="hidden" id="hatType" />
 
-        <!-- Hat Color (table depends on Hat Type) -->
         <div class="unit-dropdown" id="hatColorHDropdown">
           <div id="hatColorHDisplay">Select a hat color</div>
           <div class="unit-list" id="hatColorHList"></div>
         </div>
         <input type="hidden" id="colorH" />
 
-        <!-- Hat Size (hidden when Snap Back) -->
         <div class="unit-dropdown" id="hatStyleDropdown">
           <div id="hatStyleDisplay">Select a hat size</div>
           <div class="unit-list" id="hatStyleList"></div>
         </div>
         <input type="hidden" id="hatStyle" />
 
-        <!-- Hat Front/Back Locations & Graphics -->
         <div class="unit-dropdown" id="frontLocationHDropdown">
           <div id="frontLocationHDisplay">Select a front location</div>
           <div class="unit-list" id="frontLocationHList"></div>
@@ -391,7 +386,6 @@
         if (hiddenRLG) hiddenRLG.value = '';
       }
 
-      /* ===== Existing: Hide/skip Hat Size for Snap Back ===== */
       function updateHatSizeVisibility() {
         const hatTypeVal = (document.getElementById('hatType').value || '')
           .replace(/\s+/g, '')
@@ -413,7 +407,6 @@
         }
       }
 
-      /* ===== NEW: reload Hat Color options based on Hat Type ===== */
       async function reloadHatColorOptions(sourceTable) {
         const list = document.getElementById('hatColorHList');
         const display = document.getElementById('hatColorHDisplay');
@@ -447,9 +440,7 @@
         const table = hatTypeVal === 'flexfit' ? 'flex color' : 'color';
         reloadHatColorOptions(table);
       }
-      /* ===== END NEW ===== */
 
-      // Toggle sections (mutually exclusive)
       document.getElementById('showGraphicsBtn').addEventListener('click', () => {
         const gSec = document.getElementById('graphicsSection');
         const hSec = document.getElementById('hatSection');
@@ -496,7 +487,6 @@
         }
       });
 
-      // Load dropdowns
       async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
         const { data } = await supabase
           .from(table)
@@ -542,10 +532,8 @@
       await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
       await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
 
-      /* Initially load Hat Color from "color"; will swap based on Hat Type */
       await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
 
-      /* Pants */
       await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
       await loadOptions('pant style', 'pantStyleList', 'pantStyleDisplay', 'pantStyle', 'pantStyleDropdown');
       await loadOptions('pant size', 'pantSizeList', 'pantSizeDisplay', 'pantSize', 'pantSizeDropdown');
@@ -556,14 +544,12 @@
       await loadOptions('right leg size', 'rightLegSizeList', 'rightLegSizeDisplay', 'rightLegSize', 'rightLegSizeDropdown');
       await loadOptions('right leg graphic', 'rightLegGraphicList', 'rightLegGraphicDisplay', 'rightLegGraphic', 'rightLegGraphicDropdown');
 
-      /* React to Hat Type selection: toggle size + pick hat color source table */
       document.getElementById('hatTypeList')
         .addEventListener('click', () => setTimeout(() => {
           updateHatSizeVisibility();
           updateHatColorSource();
         }, 0));
 
-      /* Ensure correct initial state */
       updateHatSizeVisibility();
       updateHatColorSource();
 
@@ -574,7 +560,6 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
-      /* Add to Cart */
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
