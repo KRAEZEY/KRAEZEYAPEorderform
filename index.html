@@ -103,26 +103,30 @@
         <input type="hidden" id="backGraphic" />
       </div>
 
-      <!-- Hat Section -->
+      <!-- Hat Section (Hat Type moved first) -->
       <div id="hatSection" style="display:none;">
-        <div class="unit-dropdown" id="hatColorHDropdown">
-          <div id="hatColorHDisplay">Select a hat color</div>
-          <div class="unit-list" id="hatColorHList"></div>
-        </div>
-        <input type="hidden" id="colorH" />
-
+        <!-- Hat Type FIRST -->
         <div class="unit-dropdown" id="hatTypeDropdown">
           <div id="hatTypeDisplay">Select a hat type</div>
           <div class="unit-list" id="hatTypeList"></div>
         </div>
         <input type="hidden" id="hatType" />
 
+        <!-- Hat Color -->
+        <div class="unit-dropdown" id="hatColorHDropdown">
+          <div id="hatColorHDisplay">Select a hat color</div>
+          <div class="unit-list" id="hatColorHList"></div>
+        </div>
+        <input type="hidden" id="colorH" />
+
+        <!-- Hat Size -->
         <div class="unit-dropdown" id="hatStyleDropdown">
           <div id="hatStyleDisplay">Select a hat size</div>
           <div class="unit-list" id="hatStyleList"></div>
         </div>
         <input type="hidden" id="hatStyle" />
 
+        <!-- Hat Front/Back Locations & Graphics -->
         <div class="unit-dropdown" id="frontLocationHDropdown">
           <div id="frontLocationHDisplay">Select a front location</div>
           <div class="unit-list" id="frontLocationHList"></div>
@@ -692,7 +696,7 @@
             rear_size: rearSize || null,
             rear_graphic: rearGraphic || null,
             leftleg_size: leftLegSize || null,
-            leftleg_graphic: leftLegGraphic || null,
+            leftleg_graphic: LeftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
             price: ITEM_PRICE
