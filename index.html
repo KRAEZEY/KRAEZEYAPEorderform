@@ -633,13 +633,24 @@
           chev.textContent = isOpen ? '▸' : '▾';
         });
 
-        // Remove button already has its own click handler set below where items are created
         if (removeBtn) {
           removeBtn.addEventListener('click', (e) => e.stopPropagation());
         }
       }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
+        /* NEW: Require personal info before adding to cart */
+        const nameVal = document.getElementById('name').value.trim();
+        const phoneVal = document.getElementById('phone').value.trim();
+        const emailVal = document.getElementById('email').value.trim();
+        const addressVal = document.getElementById('address').value.trim();
+        const cityVal = document.getElementById('city').value.trim();
+        if (!nameVal || !phoneVal || !emailVal || !addressVal || !cityVal) {
+          alert('Please fill out Full Name, Phone Number, Email, Address, and City before adding items to cart.');
+          return;
+        }
+        /* END NEW */
+
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
         const backLocation  = document.getElementById('backLocation').value;
