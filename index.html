@@ -29,7 +29,16 @@
     @media (max-width: 576px) { .logo { transform: translateX(-6px); } }
     .unit-dropdown { position: relative; text-align: left; margin-bottom: 1rem; }
     .unit-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
-    .unit-option img { height: 40px; width: 40px; border-radius: 8px; margin-right: 10px; }
+    /* THUMBNAILS: preserve aspect ratio, no stretching */
+    .unit-option img {
+      width: 40px;
+      height: 40px;
+      aspect-ratio: 1 / 1;
+      object-fit: contain;      /* use 'cover' if you prefer cropping */
+      border-radius: 8px;
+      margin-right: 10px;
+      background: #fff;         /* subtle letterbox for non-square images */
+    }
     .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
     .unit-dropdown.open .unit-list { display: block; }
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay, #pantSizeDisplay, #rearSizeDisplay, #rearGraphicDisplay, #leftLegSizeDisplay, #leftLegGraphicDisplay, #rightLegSizeDisplay, #rightLegGraphicDisplay {
@@ -55,7 +64,7 @@
     </div>
 
     <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
-    <p>Select your item, graphic, and location.</p>
+    <p>Select your graphic and location.</p>
 
     <form id="bookingForm">
       <input type="text" id="name" class="form-control mb-2" placeholder="Full Name" required />
@@ -219,11 +228,11 @@
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <button type="submit" class="btn btn-primary w-100">PURCHASE</button>
+      <button type="submit" class="btn btn-primary w-100">Reserve</button>
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
-      Purchase successful!<br>Email Sent!
+      purchase successful!<br>Email Sent!
     </div>
 
     <div class="mt-4 text-start" id="cartSection" style="display: none%;">
@@ -461,6 +470,7 @@
         const hSec = document.getElementById('hatSection');
         const pSec = document.getElementById('pantsSection');
         const hHidden = !(hSec.style.display === 'none' || hSec.style.display === '');
+        hSec.style.display = 'none' === hSec.style.display ? '' : 'none';
         hSec.style.display = hHidden ? 'none' : 'block';
         if (!hHidden) {
           gSec.style.display = 'none';
@@ -769,7 +779,7 @@
             rear_size: rearSize || null,
             rear_graphic: rearGraphic || null,
             leftleg_size: leftLegSize || null,
-            leftleg_graphic: leftLegGraphic || null,  <!-- FIXED: was LeftLegGraphic -->
+            leftleg_graphic: leftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
             price: ITEM_PRICE
