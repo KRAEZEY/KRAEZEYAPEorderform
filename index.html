@@ -607,9 +607,58 @@
 
       const cart = [];
 
+      /* RENDER PAYPAL BUTTONS (re-renders on cart changes) */
+      function renderPayPalButtons() {
+        if (!window.paypal) return;
+        const container = document.getElementById('paypal-buttons-container');
+        if (!container) return;
+
+        // Clear previous buttons to force a fresh render with updated totals
+        container.innerHTML = '';
+
+        // Create a new instance each time
+        window._paypalButtons = paypal.Buttons({
+          style: { height: 45 },
+          onClick: (data, actions) => {
+            if (document.getElementById('cartList').children.length === 0) {
+              alert('Your cart is empty.');
+              return actions.reject();
+            }
+            return actions.resolve();
+          },
+          createOrder: (data, actions) => {
+            const total = (document.getElementById('cartList').children.length * ITEM_PRICE).toFixed(2);
+            return actions.order.create({
+              purchase_units: [{
+                amount: { value: total },
+                description: 'KRAEZEYAPE Order'
+              }]
+            });
+          },
+          onApprove: async (data, actions) => {
+            try {
+              const capture = await actions.order.capture();
+              await placeOrder(capture);
+            } catch (err) {
+              console.error(err);
+              alert('Payment capture failed. Please try again.');
+            }
+          },
+          onCancel: () => {},
+          onError: (err) => {
+            console.error(err);
+            alert('Payment error. Please try again.');
+          }
+        });
+
+        window._paypalButtons.render('#paypal-buttons-container');
+      }
+
       function updateCartTotal() {
         const total = cart.length * ITEM_PRICE;
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
+        // Re-render payment buttons so the checkout total always reflects the latest cart
+        renderPayPalButtons();
       }
 
       // Helper to wire up collapsible behavior for a given list item
@@ -626,7 +675,6 @@
         chev.textContent = '▸';
 
         header.addEventListener('click', (e) => {
-          // Don't toggle when clicking the remove button
           if (e.target.closest('.remove-btn')) return;
           const isOpen = details.style.display !== 'none';
           details.style.display = isOpen ? 'none' : 'block';
@@ -639,7 +687,7 @@
       }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        /* NEW: Require personal info before adding to cart */
+        /* Require personal info before adding to cart */
         const nameVal = document.getElementById('name').value.trim();
         const phoneVal = document.getElementById('phone').value.trim();
         const emailVal = document.getElementById('email').value.trim();
@@ -649,7 +697,6 @@
           alert('Please fill out Full Name, Phone Number, Email, Address, and City before adding items to cart.');
           return;
         }
-        /* END NEW */
 
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
@@ -942,41 +989,8 @@
         document.getElementById('pantsSection').style.display = 'none';
       }
 
-      if (window.paypal) {
-        paypal.Buttons({
-          style: { height: 45 },
-          onClick: (data, actions) => {
-            if (document.getElementById('cartList').children.length === 0) {
-              alert('Your cart is empty.');
-              return actions.reject();
-            }
-            return actions.resolve();
-          },
-          createOrder: (data, actions) => {
-            const total = (document.getElementById('cartList').children.length * ITEM_PRICE).toFixed(2);
-            return actions.order.create({
-              purchase_units: [{
-                amount: { value: total },
-                description: 'KRAEZEYAPE Order'
-              }]
-            });
-          },
-          onApprove: async (data, actions) => {
-            try {
-              const capture = await actions.order.capture();
-              await placeOrder(capture);
-            } catch (err) {
-              console.error(err);
-              alert('Payment capture failed. Please try again.');
-            }
-          },
-          onCancel: () => {},
-          onError: (err) => {
-            console.error(err);
-            alert('Payment error. Please try again.');
-          }
-        }).render('#paypal-buttons-container');
-      }
+      // Initial render of payment buttons
+      renderPayPalButtons();
 
       // (Form submit listener left as-is; with no Purchase button, it generally won't fire)
     });
