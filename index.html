@@ -292,12 +292,19 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      const ITEM_PRICE = 50;
+      /* === Pricing === */
+      const PRICE_GRAPHIC_T = 1;   // $1 test price for Graphic T
+      const PRICE_OTHERS    = 50;  // $50 for Hat & Pants (unchanged)
+      const ITEM_PRICE = 50;       // kept for compatibility (not used for totals)
+
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const getItemPrice = (type) => (type === 'Graphic T' ? PRICE_GRAPHIC_T : PRICE_OTHERS);
+      const calcCartTotal = (cart) => cart.reduce((sum, it) => sum + (it._price || getItemPrice(it.type)), 0);
 
       function clearGraphicsSelections() {
         const displays = [
@@ -613,10 +620,8 @@
         const container = document.getElementById('paypal-buttons-container');
         if (!container) return;
 
-        // Clear previous buttons to force a fresh render with updated totals
         container.innerHTML = '';
 
-        // Create a new instance each time
         window._paypalButtons = paypal.Buttons({
           style: { height: 45 },
           onClick: (data, actions) => {
@@ -627,7 +632,7 @@
             return actions.resolve();
           },
           createOrder: (data, actions) => {
-            const total = (document.getElementById('cartList').children.length * ITEM_PRICE).toFixed(2);
+            const total = calcCartTotal(cart).toFixed(2);
             return actions.order.create({
               purchase_units: [{
                 amount: { value: total },
@@ -655,13 +660,11 @@
       }
 
       function updateCartTotal() {
-        const total = cart.length * ITEM_PRICE;
+        const total = calcCartTotal(cart);
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
-        // Re-render payment buttons so the checkout total always reflects the latest cart
         renderPayPalButtons();
       }
 
-      // Helper to wire up collapsible behavior for a given list item
       function makeCollapsible(li) {
         const header = li.querySelector('.cart-item-header');
         const details = li.querySelector('.cart-item-details');
@@ -670,7 +673,6 @@
 
         if (!header || !details || !chev) return;
 
-        // Start collapsed
         details.style.display = 'none';
         chev.textContent = '▸';
 
@@ -774,7 +776,7 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
+          const itemGT = { type: 'Graphic T', _price: PRICE_GRAPHIC_T, frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -795,7 +797,7 @@
               ${frontGraphic  ? `<div><strong>Front Graphic:</strong> ${frontGraphic}</div>`   : ''}
               ${backLocation  ? `<div><strong>Back Location:</strong> ${backLocation}</div>`   : ''}
               ${backGraphic   ? `<div><strong>Back Graphic:</strong> ${backGraphic}</div>`     : ''}
-              <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+              <div><strong>Price:</strong> ${currency.format(itemGT._price)}</div>
             </div>
           `;
           liGT.querySelector('.remove-btn').addEventListener('click', () => {
@@ -810,7 +812,7 @@
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
+          const itemHat = { type: 'Hat', _price: PRICE_OTHERS, frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -831,7 +833,7 @@
               <div><strong>Front Graphic:</strong> ${frontGraphicH}</div>
               <div><strong>Back Location:</strong> ${backLocationH}</div>
               <div><strong>Back Graphic:</strong> ${backGraphicH}</div>
-              <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+              <div><strong>Price:</strong> ${currency.format(itemHat._price)}</div>
             </div>
           `;
           liHat.querySelector('.remove-btn').addEventListener('click', () => {
@@ -846,7 +848,7 @@
         }
 
         if (hasPants) {
-          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
+          const itemPants = { type: 'Pants', _price: PRICE_OTHERS, frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
           cart.push(itemPants);
 
           const liPants = document.createElement('li');
@@ -869,7 +871,7 @@
               ${leftLegGraphic ? `<div><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</div>` : ''}
               ${rightLegSize ? `<div><strong>Right Leg Size:</strong> ${rightLegSize}</div>` : ''}
               ${rightLegGraphic ? `<div><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</div>` : ''}
-              <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+              <div><strong>Price:</strong> ${currency.format(itemPants._price)}</div>
             </div>
           `;
           liPants.querySelector('.remove-btn').addEventListener('click', () => {
@@ -903,7 +905,7 @@
         }
 
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic, _price } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -929,7 +931,7 @@
             leftleg_graphic: leftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
-            price: ITEM_PRICE
+            price: _price
           }]);
         }
 
@@ -960,12 +962,12 @@
               ${it.leftLegGraphic ? `Left Leg Graphic: ${it.leftLegGraphic}<br>` : ''}
               ${it.rightLegSize ? `Right Leg Size: ${it.rightLegSize}<br>` : ''}
               ${it.rightLegGraphic ? `Right Leg Graphic: ${it.rightLegGraphic}<br>` : ''}
-              Price: ${currency.format(ITEM_PRICE)}
+              Price: ${currency.format(it._price)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
         </ul>`;
 
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
+        const grand_total = currency.format(calcCartTotal(cart));
         const params = { name, phone, email, address, city, items, grand_total };
 
         emailjs.send("service_9fvjwls", "template_gveha9l", params);
@@ -991,8 +993,6 @@
 
       // Initial render of payment buttons
       renderPayPalButtons();
-
-      // (Form submit listener left as-is; with no Purchase button, it generally won't fire)
     });
   </script>
 </body>
