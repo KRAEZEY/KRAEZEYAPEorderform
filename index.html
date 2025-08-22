@@ -35,16 +35,15 @@
     .unit-option {
       display: flex;
       align-items: center;
-      padding: 18px 16px;       /* more padding */
+      padding: 18px 16px;
       cursor: pointer;
-      font-size: 1.25rem;       /* larger text */
+      font-size: 1.25rem;
       line-height: 1.4;
     }
     .unit-option:hover { background: #f2f6ff; }
 
-    /* Bigger thumbnails, still preserving aspect ratio */
     .unit-option img {
-      width: 72px;              /* bigger image */
+      width: 72px;
       height: 72px;
       aspect-ratio: 1 / 1;
       object-fit: contain;
@@ -54,14 +53,13 @@
       flex: 0 0 auto;
     }
 
-    /* Taller dropdown container to fit bigger options comfortably */
     .unit-list {
       position: absolute;
       width: 100%;
       background: white;
       border: 1px solid #ccc;
       border-radius: 8px;
-      max-height: 480px;        /* increased height */
+      max-height: 480px;
       overflow-y: auto;
       z-index: 10;
       display: none;
@@ -81,6 +79,22 @@
     #showPantsBtn.btn-success:hover {
       background-color: #FFB6C1;
       color: #000;
+    }
+
+    /* Collapsible cart item styles */
+    .cart-item-header {
+      cursor: pointer;
+      padding: 8px 12px;
+      background: #f8f9ff;
+      border-radius: 6px;
+      user-select: none;
+    }
+    .cart-item-details {
+      padding: 8px 12px;
+    }
+    .cart-item-header .chev {
+      font-weight: bold;
+      line-height: 1;
     }
   </style>
 </head>
@@ -255,7 +269,7 @@
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <!-- (Payment buttons moved to cart section below) -->
+      <!-- Payment buttons appear in cart section -->
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
@@ -266,7 +280,6 @@
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
       <div id="cartTotal" class="mt-2 fw-bold"></div>
-      <!-- PayPal/Venmo Buttons now appear here, under the cart items -->
       <div id="paypal-buttons-container" class="mt-3"></div>
     </div>
   </div>
@@ -599,6 +612,33 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
+      // Helper to wire up collapsible behavior for a given list item
+      function makeCollapsible(li) {
+        const header = li.querySelector('.cart-item-header');
+        const details = li.querySelector('.cart-item-details');
+        const chev = li.querySelector('.chev');
+        const removeBtn = li.querySelector('.remove-btn');
+
+        if (!header || !details || !chev) return;
+
+        // Start collapsed
+        details.style.display = 'none';
+        chev.textContent = '▸';
+
+        header.addEventListener('click', (e) => {
+          // Don't toggle when clicking the remove button
+          if (e.target.closest('.remove-btn')) return;
+          const isOpen = details.style.display !== 'none';
+          details.style.display = isOpen ? 'none' : 'block';
+          chev.textContent = isOpen ? '▸' : '▾';
+        });
+
+        // Remove button already has its own click handler set below where items are created
+        if (removeBtn) {
+          removeBtn.addEventListener('click', (e) => e.stopPropagation());
+        }
+      }
+
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
@@ -680,22 +720,27 @@
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
-          liGT.className = 'list-group-item d-flex justify-content-between align-items-start';
+          liGT.className = 'list-group-item';
           liGT.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:2px;">
+            <div class="cart-item-header d-flex justify-content-between align-items-center">
               <span><strong>Item:</strong> Graphic T</span>
-              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>`      : ''}
-              ${color ? `<span><strong>Color:</strong> ${color}</span>`: ''}
-              ${size ? `<span><strong>Size:</strong> ${size}</span>`   : ''}
-              ${frontLocation ? `<span><strong>Front Location:</strong> ${frontLocation}</span>` : ''}
-              ${frontGraphic  ? `<span><strong>Front Graphic:</strong> ${frontGraphic}</span>`   : ''}
-              ${backLocation  ? `<span><strong>Back Location:</strong> ${backLocation}</span>`   : ''}
-              ${backGraphic   ? `<span><strong>Back Graphic:</strong> ${backGraphic}</span>`     : ''}
-              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="chev">▸</span>
+                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
+              </div>
             </div>
-            <button class="btn btn-sm btn-danger">X</button>
+            <div class="cart-item-details mt-2">
+              ${cut ? `<div><strong>Cut:</strong> ${cut}</div>`      : ''}
+              ${color ? `<div><strong>Color:</strong> ${color}</div>`: ''}
+              ${size ? `<div><strong>Size:</strong> ${size}</div>`   : ''}
+              ${frontLocation ? `<div><strong>Front Location:</strong> ${frontLocation}</div>` : ''}
+              ${frontGraphic  ? `<div><strong>Front Graphic:</strong> ${frontGraphic}</div>`   : ''}
+              ${backLocation  ? `<div><strong>Back Location:</strong> ${backLocation}</div>`   : ''}
+              ${backGraphic   ? `<div><strong>Back Graphic:</strong> ${backGraphic}</div>`     : ''}
+              <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+            </div>
           `;
-          liGT.querySelector('button').addEventListener('click', () => {
+          liGT.querySelector('.remove-btn').addEventListener('click', () => {
             const index = cart.indexOf(itemGT);
             if (index > -1) cart.splice(index, 1);
             liGT.remove();
@@ -703,6 +748,7 @@
             updateCartTotal();
           });
           cartList.appendChild(liGT);
+          makeCollapsible(liGT);
         }
 
         if (hasHat) {
@@ -710,22 +756,27 @@
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
-          liHat.className = 'list-group-item d-flex justify-content-between align-items-start';
+          liHat.className = 'list-group-item';
           liHat.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:2px;">
+            <div class="cart-item-header d-flex justify-content-between align-items-center">
               <span><strong>Item:</strong> Hat</span>
-              ${colorH ? `<span><strong>Hat Color:</strong> ${colorH}</span>` : ''}
-              ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}
-              <span><strong>Hat Size:</strong> ${hatStyle}</span>
-              <span><strong>Front Location:</strong> ${frontLocationH}</span>
-              <span><strong>Front Graphic:</strong> ${frontGraphicH}</span>
-              <span><strong>Back Location:</strong> ${backLocationH}</span>
-              <span><strong>Back Graphic:</strong> ${backGraphicH}</span>
-              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="chev">▸</span>
+                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
+              </div>
             </div>
-            <button class="btn btn-sm btn-danger">X</button>
+            <div class="cart-item-details mt-2">
+              ${colorH ? `<div><strong>Hat Color:</strong> ${colorH}</div>` : ''}
+              ${hatType ? `<div><strong>Hat Type:</strong> ${hatType}</div>` : ''}
+              <div><strong>Hat Size:</strong> ${hatStyle}</div>
+              <div><strong>Front Location:</strong> ${frontLocationH}</div>
+              <div><strong>Front Graphic:</strong> ${frontGraphicH}</div>
+              <div><strong>Back Location:</strong> ${backLocationH}</div>
+              <div><strong>Back Graphic:</strong> ${backGraphicH}</div>
+              <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+            </div>
           `;
-          liHat.querySelector('button').addEventListener('click', () => {
+          liHat.querySelector('.remove-btn').addEventListener('click', () => {
             const index = cart.indexOf(itemHat);
             if (index > -1) cart.splice(index, 1);
             liHat.remove();
@@ -733,6 +784,7 @@
             updateCartTotal();
           });
           cartList.appendChild(liHat);
+          makeCollapsible(liHat);
         }
 
         if (hasPants) {
@@ -740,24 +792,29 @@
           cart.push(itemPants);
 
           const liPants = document.createElement('li');
-          liPants.className = 'list-group-item d-flex justify-content-between align-items-start';
+          liPants.className = 'list-group-item';
           liPants.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:2px;">
+            <div class="cart-item-header d-flex justify-content-between align-items-center">
               <span><strong>Item:</strong> Pants</span>
-              ${pantColor ? `<span><strong>Pant Color:</strong> ${pantColor}</span>` : ''}
-              ${pantStyle ? `<span><strong>Pant Style:</strong> ${pantStyle}</span>` : ''}
-              ${pantSize ? `<span><strong>Pant Size:</strong> ${pantSize}</span>` : ''}
-              ${rearSize ? `<span><strong>Rear Size:</strong> ${rearSize}</span>` : ''}
-              ${rearGraphic ? `<span><strong>Rear Graphic:</strong> ${rearGraphic}</span>` : ''}
-              ${leftLegSize ? `<span><strong>Left Leg Size:</strong> ${leftLegSize}</span>` : ''}
-              ${leftLegGraphic ? `<span><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</span>` : ''}
-              ${rightLegSize ? `<span><strong>Right Leg Size:</strong> ${rightLegSize}</span>` : ''}
-              ${rightLegGraphic ? `<span><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</span>` : ''}
-              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="chev">▸</span>
+                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
+              </div>
             </div>
-            <button class="btn btn-sm btn-danger">X</button>
+            <div class="cart-item-details mt-2">
+              ${pantColor ? `<div><strong>Pant Color:</strong> ${pantColor}</div>` : ''}
+              ${pantStyle ? `<div><strong>Pant Style:</strong> ${pantStyle}</div>` : ''}
+              ${pantSize ? `<div><strong>Pant Size:</strong> ${pantSize}</div>` : ''}
+              ${rearSize ? `<div><strong>Rear Size:</strong> ${rearSize}</div>` : ''}
+              ${rearGraphic ? `<div><strong>Rear Graphic:</strong> ${rearGraphic}</div>` : ''}
+              ${leftLegSize ? `<div><strong>Left Leg Size:</strong> ${leftLegSize}</div>` : ''}
+              ${leftLegGraphic ? `<div><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</div>` : ''}
+              ${rightLegSize ? `<div><strong>Right Leg Size:</strong> ${rightLegSize}</div>` : ''}
+              ${rightLegGraphic ? `<div><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</div>` : ''}
+              <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+            </div>
           `;
-          liPants.querySelector('button').addEventListener('click', () => {
+          liPants.querySelector('.remove-btn').addEventListener('click', () => {
             const index = cart.indexOf(itemPants);
             if (index > -1) cart.splice(index, 1);
             liPants.remove();
@@ -765,6 +822,7 @@
             updateCartTotal();
           });
           cartList.appendChild(liPants);
+          makeCollapsible(liPants);
         }
 
         updateCartTotal();
