@@ -255,7 +255,6 @@
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <button type="submit" class="btn btn-primary w-100">Purchase</button>
 
       <!-- PayPal/Venmo Buttons render here -->
       <div id="paypal-buttons-container" class="mt-3"></div>
@@ -775,7 +774,6 @@
          PAYMENT-GATED FINALIZATION
          ================================ */
 
-      // 1) Extract your current submit logic into a function we call AFTER capture
       async function placeOrder(paymentDetails) {
         const name = document.getElementById('name').value.trim();
         const phone = document.getElementById('phone').value.trim();
@@ -866,7 +864,6 @@
         document.getElementById('cartSection').style.display = 'none';
         updateCartTotal();
 
-        // Optionally clear form
         document.getElementById('bookingForm').reset();
         clearGraphicsSelections();
         clearHatSelections();
@@ -876,12 +873,10 @@
         document.getElementById('pantsSection').style.display = 'none';
       }
 
-      // 2) Render PayPal Buttons (includes Venmo via enable-funding)
       if (window.paypal) {
         paypal.Buttons({
-          style: { height: 45 }, // keep minimal
+          style: { height: 45 },
           onClick: (data, actions) => {
-            // Basic validations before opening the sheet
             if (document.getElementById('cartList').children.length === 0) {
               alert('Your cart is empty.');
               return actions.reject();
@@ -899,16 +894,14 @@
           },
           onApprove: async (data, actions) => {
             try {
-              const capture = await actions.order.capture(); // payment success
-              await placeOrder(capture);                    // finalize order now
+              const capture = await actions.order.capture();
+              await placeOrder(capture);
             } catch (err) {
               console.error(err);
               alert('Payment capture failed. Please try again.');
             }
           },
-          onCancel: () => {
-            // user cancelled — do nothing
-          },
+          onCancel: () => {},
           onError: (err) => {
             console.error(err);
             alert('Payment error. Please try again.');
@@ -916,16 +909,7 @@
         }).render('#paypal-buttons-container');
       }
 
-      // 3) Make the "Purchase" button just scroll to the PayPal buttons
-      document.getElementById('bookingForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const container = document.getElementById('paypal-buttons-container');
-        if (document.getElementById('cartList').children.length === 0) {
-          alert('Your cart is empty.');
-          return;
-        }
-        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
+      // (Form submit listener left as-is; with no Purchase button, it generally won't fire)
     });
   </script>
 </body>
