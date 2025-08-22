@@ -27,20 +27,46 @@
     .logo-wrap { display: flex; justify-content: center; }
     .logo { max-height: 400px; margin-bottom: 20px; border-radius: 12px; display: block; max-width: 100%; height: auto; }
     @media (max-width: 576px) { .logo { transform: translateX(-6px); } }
+
     .unit-dropdown { position: relative; text-align: left; margin-bottom: 1rem; }
-    .unit-option { display: flex; align-items: center; padding: 10px; cursor: pointer; }
-    /* THUMBNAILS: preserve aspect ratio, no stretching */
+
+    /* Make each option bigger and easier to see */
+    .unit-option {
+      display: flex;
+      align-items: center;
+      padding: 14px 12px;       /* more padding */
+      cursor: pointer;
+      font-size: 1.1rem;        /* larger text */
+      line-height: 1.3;
+    }
+    .unit-option:hover { background: #f2f6ff; } /* subtle highlight */
+
+    /* THUMBNAILS: larger, preserve aspect ratio, no stretching */
     .unit-option img {
-      width: 40px;
-      height: 40px;
+      width: 56px;              /* increased from 40px */
+      height: 56px;
       aspect-ratio: 1 / 1;
       object-fit: contain;      /* use 'cover' if you prefer cropping */
       border-radius: 8px;
-      margin-right: 10px;
+      margin-right: 12px;
       background: #fff;         /* subtle letterbox for non-square images */
+      flex: 0 0 auto;
     }
-    .unit-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
+
+    /* Taller menu so bigger items fit comfortably */
+    .unit-list {
+      position: absolute;
+      width: 100%;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-height: 320px;        /* increased from 200px */
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
     .unit-dropdown.open .unit-list { display: block; }
+
     #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay, #pantSizeDisplay, #rearSizeDisplay, #rearGraphicDisplay, #leftLegSizeDisplay, #leftLegGraphicDisplay, #rightLegSizeDisplay, #rightLegGraphicDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
