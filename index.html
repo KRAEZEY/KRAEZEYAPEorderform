@@ -270,6 +270,9 @@
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
       <button type="submit" class="btn btn-primary w-100">Purchase</button>
+
+      <!-- PayPal Buttons (card + PayPal) -->
+      <div id="paypal-buttons" class="mt-3"></div>
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
@@ -285,6 +288,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <!-- PayPal SDK with your Client ID -->
+  <script src="https://www.paypal.com/sdk/js?client-id=AV2Sea57YslMINpQYTQjEf6iNIPchH9Oin_RjTd2YNhXVnguC9JyIiXCNbvNGhRROTQi7-1kEZscdywN&components=buttons&enable-funding=card&currency=USD&intent=capture"></script>
   <script>
     (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
   </script>
@@ -626,7 +631,6 @@
           const el = document.getElementById(id);
           const val = (el?.value || '').trim();
 
-          // reset any previous highlight
           el.classList.remove('is-invalid');
           el.style.borderColor = '';
 
@@ -641,7 +645,7 @@
         });
 
         if (invalidIds.length) {
-          alert('Please complete: ' + invalidIds.map(f => f.label).join(', ') + ' before adding to cart.');
+          alert('Please complete: ' + invalidIds.map(f => f.label).join(', ') + ' before adding to cart or paying.');
           const firstBad = document.getElementById(invalidIds[0].id);
           if (firstBad) firstBad.focus();
           return false;
@@ -649,7 +653,6 @@
         return true;
       }
 
-      // remove red outline once user types
       ['name','phone','email','address','city'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
@@ -666,7 +669,6 @@
         const icon = li.querySelector('.toggle-icon');
         if (!header || !details || !icon) return;
 
-        // Start collapsed
         details.style.display = 'none';
         icon.textContent = '+';
 
@@ -678,7 +680,6 @@
       }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        // Require personal fields BEFORE any cart action
         if (!requirePersonalInfo()) return;
 
         const frontLocation = document.getElementById('frontLocation').value;
@@ -969,6 +970,41 @@
         document.getElementById('hatSection').style.display = 'none';
         document.getElementById('pantsSection').style.display = 'none';
       });
+
+      /* === PayPal Buttons (Card + PayPal) === */
+      if (window.paypal && document.getElementById('paypal-buttons')) {
+        paypal.Buttons({
+          style: { layout: 'vertical', shape: 'rect', label: 'pay' },
+          fundingSource: undefined, // allow all (includes CARD + PAYPAL)
+          createOrder: (data, actions) => {
+            if (!requirePersonalInfo()) throw new Error('Missing personal info');
+            if (cart.length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
+            const total = (cart.length * ITEM_PRICE).toFixed(2);
+            return actions.order.create({
+              purchase_units: [{
+                amount: { currency_code: 'USD', value: total },
+                description: `KRAEZEYAPE Order (${cart.length} item${cart.length > 1 ? 's' : ''})`
+              }]
+            });
+          },
+          onApprove: async (data, actions) => {
+            try {
+              await actions.order.capture();
+              // Trigger your existing submit handler to save order + send emails
+              const form = document.getElementById('bookingForm');
+              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            } catch (e) {
+              console.error(e);
+              alert('There was a problem capturing the payment.');
+            }
+          },
+          onError: (err) => {
+            console.error(err);
+            alert('Payment error. Please try again.');
+          }
+        }).render('#paypal-buttons');
+      }
+      /* === End PayPal === */
     });
   </script>
 </body>
