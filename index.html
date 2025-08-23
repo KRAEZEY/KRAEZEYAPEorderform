@@ -97,11 +97,12 @@
       line-height: 1;
     }
 
-    /* ---------- NEW: ensure dropdown menus appear over PayPal buttons ---------- */
+    /* ---------- BRING ALL DROPDOWNS TO FRONT (only change) ---------- */
+    .booking-form, form, #cartSection { position: relative; overflow: visible; }
     #paypal-buttons-container { position: relative; z-index: 1; }
-    .unit-dropdown { position: relative; z-index: 2; }
-    .unit-dropdown .unit-list { position: absolute; z-index: 99999; }
-    /* ------------------------------------------------------------------------- */
+    .unit-dropdown { position: relative; z-index: 2147483646; }
+    .unit-dropdown .unit-list { position: absolute; z-index: 2147483647; }
+    /* --------------------------------------------------------------- */
   </style>
 </head>
 <body>
@@ -296,6 +297,7 @@
     (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
   </script>
 
+  <!-- Your original JS remains unchanged below -->
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       /* === Pricing === */
