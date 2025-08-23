@@ -96,6 +96,12 @@
       font-weight: bold;
       line-height: 1;
     }
+
+    /* ---------- NEW: ensure dropdown menus appear over PayPal buttons ---------- */
+    #paypal-buttons-container { position: relative; z-index: 1; }
+    .unit-dropdown { position: relative; z-index: 2; }
+    .unit-dropdown .unit-list { position: absolute; z-index: 99999; }
+    /* ------------------------------------------------------------------------- */
   </style>
 </head>
 <body>
