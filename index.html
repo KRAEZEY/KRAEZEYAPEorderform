@@ -908,7 +908,7 @@
             rear_size: rearSize || null,
             rear_graphic: rearGraphic || null,
             leftleg_size: leftLegSize || null,
-            leftleg_graphic: leftLegGraphic || null,
+            leftleg_graphic: LeftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
             price: ITEM_PRICE
@@ -971,35 +971,68 @@
         document.getElementById('pantsSection').style.display = 'none';
       });
 
-      /* === PayPal Buttons (Card + PayPal) === */
+      /* === PayPal Buttons (Card + PayPal) — with console logging === */
       if (window.paypal && document.getElementById('paypal-buttons')) {
         paypal.Buttons({
           style: { layout: 'vertical', shape: 'rect', label: 'pay' },
           fundingSource: undefined, // allow all (includes CARD + PAYPAL)
+
           createOrder: (data, actions) => {
             if (!requirePersonalInfo()) throw new Error('Missing personal info');
             if (cart.length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
             const total = (cart.length * ITEM_PRICE).toFixed(2);
-            return actions.order.create({
+
+            const order = {
               purchase_units: [{
                 amount: { currency_code: 'USD', value: total },
                 description: `KRAEZEYAPE Order (${cart.length} item${cart.length > 1 ? 's' : ''})`
               }]
-            });
+            };
+            console.log('[PayPal] createOrder payload:', order);
+
+            return actions.order.create(order);
           },
+
           onApprove: async (data, actions) => {
             try {
-              await actions.order.capture();
-              // Trigger your existing submit handler to save order + send emails
+              console.log('[PayPal] onApprove data:', data);
+              const capture = await actions.order.capture();
+              console.log('[PayPal] capture result:', capture);
+
+              // Trigger your existing submit handler
               const form = document.getElementById('bookingForm');
               form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
             } catch (e) {
-              console.error(e);
+              console.error('[PayPal] capture error:', e);
+
+              // Try to fetch the latest order details for more context
+              try {
+                const current = await actions.order.get();
+                console.log('[PayPal] order details after capture error:', current);
+              } catch (e2) {
+                console.error('[PayPal] order.get error:', e2);
+              }
+
+              // Surface structured issues if present
+              const issues = e?.details || e?.data?.details || e?.cause?.details;
+              if (issues) {
+                issues.forEach((d, i) =>
+                  console.error(`[PayPal] issue ${i + 1}:`, d?.issue, d?.description || d)
+                );
+              }
+
               alert('There was a problem capturing the payment.');
             }
           },
+
           onError: (err) => {
-            console.error(err);
+            console.error('[PayPal] onError raw:', err);
+            const issues = err?.details || err?.data?.details || err?.cause?.details;
+            if (issues) {
+              issues.forEach((d, i) =>
+                console.error(`[PayPal] issue ${i + 1}:`, d?.issue, d?.description || d)
+              );
+            }
             alert('Payment error. Please try again.');
           }
         }).render('#paypal-buttons');
