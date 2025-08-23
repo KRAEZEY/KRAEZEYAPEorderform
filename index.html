@@ -97,12 +97,20 @@
       line-height: 1;
     }
 
-    /* ---------- BRING ALL DROPDOWNS TO FRONT (only change) ---------- */
-    .booking-form, form, #cartSection { position: relative; overflow: visible; }
-    #paypal-buttons-container { position: relative; z-index: 1; }
-    .unit-dropdown { position: relative; z-index: 2147483646; }
-    .unit-dropdown .unit-list { position: absolute; z-index: 2147483647; }
-    /* --------------------------------------------------------------- */
+    /* ---------- Force dropdowns above PayPal (only changes below) ---------- */
+    .booking-form, form, #cartSection { position: relative; overflow: visible; z-index: auto; }
+    /* Make all dropdown stacks sit on top */
+    .unit-dropdown { position: relative; z-index: 2147483646 !important; }
+    .unit-dropdown .unit-list { position: absolute; z-index: 2147483647 !important; }
+
+    /* Push PayPal below everything */
+    #paypal-buttons-container { position: relative !important; z-index: 0 !important; }
+    #paypal-buttons-container * { position: relative !important; z-index: 0 !important; }
+    #paypal-buttons-container iframe { position: relative !important; z-index: 0 !important; }
+
+    /* While ANY dropdown is open, disable PayPal clicks so it can’t “cover” */
+    form:has(.unit-dropdown.open) #paypal-buttons-container { pointer-events: none; }
+    /* ---------------------------------------------------------------------- */
   </style>
 </head>
 <body>
@@ -297,7 +305,7 @@
     (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
   </script>
 
-  <!-- Your original JS remains unchanged below -->
+  <!-- Your original JS (unchanged) -->
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       /* === Pricing === */
