@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>KRAEZEYAPE ORDER FORM</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <!-- PayPal JS SDK (PayPal + Venmo) -->
-  <script src="https://www.paypal.com/sdk/js?client-id=AV2Sea57YslMINpQYTQjEf6iNIPchH9Oin_RjTd2YNhXVnguC9JyIiXCNbvNGhRROTQi7-1kEZscdywN&enable-funding=venmo&currency=USD"></script>
   <style>
+    /* Banana background */
     body {
       background-image:
         linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.08)),
@@ -42,6 +41,7 @@
     }
     .unit-option:hover { background: #f2f6ff; }
 
+    /* Larger thumbnails, preserve ratio */
     .unit-option img {
       width: 72px;
       height: 72px;
@@ -66,42 +66,31 @@
     }
     .unit-dropdown.open .unit-list { display: block; }
 
-    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay, #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay, #pantColorDisplay, #pantStyleDisplay, #pantSizeDisplay, #rearSizeDisplay, #rearGraphicDisplay, #leftLegSizeDisplay, #leftLegGraphicDisplay, #rightLegSizeDisplay, #rightLegGraphicDisplay {
+    /* Clickable display chips */
+    #frontLocationDisplay, #backLocationDisplay, #backGraphicDisplay, #frontGraphicDisplay, #sizeDisplay, #colorDisplay, #cutDisplay,
+    #hatStyleDisplay, #frontLocationHDisplay, #frontGraphicHDisplay, #backLocationHDisplay, #backGraphicHDisplay, #hatTypeDisplay, #hatColorHDisplay,
+    #pantColorDisplay, #pantStyleDisplay, #pantSizeDisplay, #rearSizeDisplay, #rearGraphicDisplay, #leftLegSizeDisplay, #leftLegGraphicDisplay, #rightLegSizeDisplay, #rightLegGraphicDisplay {
       background-color: #e9f0ff; padding: 10px; border-radius: 8px; cursor: pointer;
     }
 
-    /* Pink with black letters for the "Pants" button */
-    #showPantsBtn.btn-success {
-      background-color: #FFC0CB;
-      border: none;
-      color: #000;
-    }
-    #showPantsBtn.btn-success:hover {
-      background-color: #FFB6C1;
-      color: #000;
-    }
+    /* Pants button: pink with black text */
+    #showPantsBtn.btn-success { background-color: #FFC0CB; border: none; color: #000; }
+    #showPantsBtn.btn-success:hover { background-color: #FFB6C1; color: #000; }
 
-    /* Collapsible cart item styles */
-    .cart-item-header {
+    /* Collapsible cart items */
+    details summary {
       cursor: pointer;
-      padding: 8px 12px;
-      background: #f8f9ff;
-      border-radius: 6px;
-      user-select: none;
+      list-style: none;
+      outline: none;
     }
-    .cart-item-details {
-      padding: 8px 12px;
-    }
-    .cart-item-header .chev {
-      font-weight: bold;
-      line-height: 1;
-    }
+    details summary::-webkit-details-marker { display: none; }
+    .cart-summary-line { font-weight: 600; }
   </style>
 </head>
 <body>
   <div class="booking-form text-center">
     <div class="logo-wrap">
-      <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo">
+      <img src="https://kraezeyape.com/_assets/media/a732b64a5c034118ecb8b995135b23c4.png" class="logo" alt="KRAEZEYAPE">
     </div>
 
     <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
@@ -121,7 +110,7 @@
         <button type="button" id="showPantsBtn" class="btn btn-success w-100">Pants</button>
       </div>
 
-      <!-- Graphic T Section -->
+      <!-- Graphic T Section (ordered as requested) -->
       <div id="graphicsSection" style="display:none;">
         <div class="unit-dropdown" id="cutDropdown">
           <div id="cutDisplay">Select a cut</div>
@@ -269,43 +258,42 @@
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <!-- Payment buttons appear in cart section -->
+      <!-- Purchase button removed previously; only PayPal below -->
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
       Purchase Successful!<br>Email Sent!
     </div>
 
-    <div class="mt-4 text-start" id="cartSection" style="display: none%;">
+    <div class="mt-4 text-start" id="cartSection" style="display: none;">
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
       <div id="cartTotal" class="mt-2 fw-bold"></div>
-      <div id="paypal-buttons-container" class="mt-3"></div>
+
+      <!-- PayPal Buttons render here -->
+      <div id="paypalButtons" class="mt-3"></div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <!-- PayPal Buttons only (no hosted/advanced card fields) -->
+  <script src="https://www.paypal.com/sdk/js?client-id=AV2Sea57YslMINpQYTQjEf6iNIPchH9Oin_RjTd2YNhXVnguC9JyIiXCNbvNGhRROTQi7-1kEZscdywN&components=buttons&currency=USD&intent=capture"></script>
   <script>
     (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
-  </script>
 
-  <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      /* === Pricing === */
-      const PRICE_GRAPHIC_T = 1;   // $1 test price for Graphic T
-      const PRICE_OTHERS    = 50;  // $50 for Hat & Pants (unchanged)
-      const ITEM_PRICE = 50;       // kept for compatibility (not used for totals)
+      // Prices: keep Graphic T at $1 test, others $50
+      const PRICE_GRAPHIC_T = 1;
+      const PRICE_DEFAULT = 50;
 
-      const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+      const currencyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      const getItemPrice = (type) => (type === 'Graphic T' ? PRICE_GRAPHIC_T : PRICE_OTHERS);
-      const calcCartTotal = (cart) => cart.reduce((sum, it) => sum + (it._price || getItemPrice(it.type)), 0);
-
+      /* ---------- helpers to clear sections ---------- */
       function clearGraphicsSelections() {
         const displays = [
           ['frontLocationDisplay', 'Select a front location', 'frontLocationDropdown'],
@@ -325,125 +313,136 @@
         });
         hiddens.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       }
-
       function clearHatSelections() {
-        const dispColor = document.getElementById('hatColorHDisplay');
-        const ddColor   = document.getElementById('hatColorHDropdown');
-        if (dispColor) dispColor.textContent = 'Select a hat color';
-        if (ddColor) ddColor.classList.remove('open');
-        const hiddenColor = document.getElementById('colorH');
-        if (hiddenColor) hiddenColor.value = '';
-
-        const dispType = document.getElementById('hatTypeDisplay');
-        const ddType   = document.getElementById('hatTypeDropdown');
-        if (dispType) dispType.textContent = 'Select a hat type';
-        if (ddType) ddType.classList.remove('open');
-        const hiddenType = document.getElementById('hatType');
-        if (hiddenType) hiddenType.value = '';
-
-        const disp = document.getElementById('hatStyleDisplay');
-        const dd   = document.getElementById('hatStyleDropdown');
-        if (disp) disp.textContent = 'Select a hat size';
-        if (dd) dd.classList.remove('open');
-        const hidden = document.getElementById('hatStyle');
-        if (hidden) hidden.value = '';
-        if (dd) dd.style.display = '';
-        updateHatSizeVisibility();
-
-        const dispH1 = document.getElementById('frontLocationHDisplay');
-        const ddH1   = document.getElementById('frontLocationHDropdown');
-        if (dispH1) dispH1.textContent = 'Select a front location';
-        if (ddH1) ddH1.classList.remove('open');
-        const hiddenH1 = document.getElementById('frontLocationH');
-        if (hiddenH1) hiddenH1.value = '';
-
-        const dispH2 = document.getElementById('frontGraphicHDisplay');
-        const ddH2   = document.getElementById('frontGraphicHDropdown');
-        if (dispH2) dispH2.textContent = 'Select a front graphic';
-        if (ddH2) ddH2.classList.remove('open');
-        const hiddenH2 = document.getElementById('frontGraphicH');
-        if (hiddenH2) hiddenH2.value = '';
-
-        const dispH3a = document.getElementById('backLocationHDisplay');
-        const ddH3a   = document.getElementById('backLocationHDropdown');
-        if (dispH3a) dispH3a.textContent = 'Select a back location';
-        if (ddH3a) ddH3a.classList.remove('open');
-        const hiddenH3a = document.getElementById('backLocationH');
-        if (hiddenH3a) hiddenH3a.value = '';
-
-        const dispH3 = document.getElementById('backGraphicHDisplay');
-        const ddH3   = document.getElementById('backGraphicHDropdown');
-        if (dispH3) dispH3.textContent = 'Select a back graphic';
-        if (ddH3) ddH3.classList.remove('open');
-        const hiddenH3 = document.getElementById('backGraphicH');
-        if (hiddenH3) hiddenH3.value = '';
+        const pairs = [
+          ['hatColorHDisplay','hatColorHDropdown','colorH','Select a hat color'],
+          ['hatTypeDisplay','hatTypeDropdown','hatType','Select a hat type'],
+          ['hatStyleDisplay','hatStyleDropdown','hatStyle','Select a hat size'],
+          ['frontLocationHDisplay','frontLocationHDropdown','frontLocationH','Select a front location'],
+          ['frontGraphicHDisplay','frontGraphicHDropdown','frontGraphicH','Select a front graphic'],
+          ['backLocationHDisplay','backLocationHDropdown','backLocationH','Select a back location'],
+          ['backGraphicHDisplay','backGraphicHDropdown','backGraphicH','Select a back graphic'],
+        ];
+        pairs.forEach(([dispId, ddId, hiddenId, label])=>{
+          const disp = document.getElementById(dispId), dd = document.getElementById(ddId), hid = document.getElementById(hiddenId);
+          if (disp) disp.textContent = label;
+          if (dd) dd.classList.remove('open');
+          if (hid) hid.value = '';
+        });
+        // snapback logic text reset
+        const hatSizeDd = document.getElementById('hatStyleDropdown');
+        const hatStyleDisplay = document.getElementById('hatStyleDisplay');
+        if (hatSizeDd) hatSizeDd.style.display = '';
+        if (hatStyleDisplay) hatStyleDisplay.textContent = 'Select a hat size';
       }
-
       function clearPantsSelections() {
-        const dispC = document.getElementById('pantColorDisplay');
-        const ddC   = document.getElementById('pantColorDropdown');
-        if (dispC) dispC.textContent = 'Select a pants color';
-        if (ddC) ddC.classList.remove('open');
-        const hiddenC = document.getElementById('pantColor');
-        if (hiddenC) hiddenC.value = '';
-
-        const dispS = document.getElementById('pantStyleDisplay');
-        const ddS   = document.getElementById('pantStyleDropdown');
-        if (dispS) dispS.textContent = 'Select a pants style';
-        if (ddS) ddS.classList.remove('open');
-        const hiddenS = document.getElementById('pantStyle');
-        if (hiddenS) hiddenS.value = '';
-
-        const dispZ = document.getElementById('pantSizeDisplay');
-        const ddZ   = document.getElementById('pantSizeDropdown');
-        if (dispZ) dispZ.textContent = 'Select a pants size';
-        if (ddZ) ddZ.classList.remove('open');
-        const hiddenZ = document.getElementById('pantSize');
-        if (hiddenZ) hiddenZ.value = '';
-
-        const dispR = document.getElementById('rearSizeDisplay');
-        const ddR   = document.getElementById('rearSizeDropdown');
-        if (dispR) dispR.textContent = 'Select a rear size';
-        if (ddR) ddR.classList.remove('open');
-        const hiddenR = document.getElementById('rearSize');
-        if (hiddenR) hiddenR.value = '';
-
-        const dispRG = document.getElementById('rearGraphicDisplay');
-        const ddRG   = document.getElementById('rearGraphicDropdown');
-        if (dispRG) dispRG.textContent = 'Select a rear graphic';
-        if (ddRG) ddRG.classList.remove('open');
-        const hiddenRG = document.getElementById('rearGraphic');
-        if (hiddenRG) hiddenRG.value = '';
-
-        const dispLL = document.getElementById('leftLegSizeDisplay');
-        const ddLL   = document.getElementById('leftLegSizeDropdown');
-        if (dispLL) dispLL.textContent = 'Select a left leg size';
-        if (ddLL) ddLL.classList.remove('open');
-        const hiddenLL = document.getElementById('leftLegSize');
-        if (hiddenLL) hiddenLL.value = '';
-
-        const dispLLG = document.getElementById('leftLegGraphicDisplay');
-        const ddLLG   = document.getElementById('leftLegGraphicDropdown');
-        if (dispLLG) dispLLG.textContent = 'Select a left leg graphic';
-        if (ddLLG) ddLLG.classList.remove('open');
-        const hiddenLLG = document.getElementById('leftLegGraphic');
-        if (hiddenLLG) hiddenLLG.value = '';
-
-        const dispRL = document.getElementById('rightLegSizeDisplay');
-        const ddRL   = document.getElementById('rightLegSizeDropdown');
-        if (dispRL) dispRL.textContent = 'Select a right leg size';
-        if (ddRL) ddRL.classList.remove('open');
-        const hiddenRL = document.getElementById('rightLegSize');
-        if (hiddenRL) hiddenRL.value = '';
-
-        const dispRLG = document.getElementById('rightLegGraphicDisplay');
-        const ddRLG   = document.getElementById('rightLegGraphicDropdown');
-        if (dispRLG) dispRLG.textContent = 'Select a right leg graphic';
-        if (ddRLG) ddRLG.classList.remove('open');
-        const hiddenRLG = document.getElementById('rightLegGraphic');
-        if (hiddenRLG) hiddenRLG.value = '';
+        const pairs = [
+          ['pantColorDisplay','pantColorDropdown','pantColor','Select a pants color'],
+          ['pantStyleDisplay','pantStyleDropdown','pantStyle','Select a pants style'],
+          ['pantSizeDisplay','pantSizeDropdown','pantSize','Select a pants size'],
+          ['rearSizeDisplay','rearSizeDropdown','rearSize','Select a rear size'],
+          ['rearGraphicDisplay','rearGraphicDropdown','rearGraphic','Select a rear graphic'],
+          ['leftLegSizeDisplay','leftLegSizeDropdown','leftLegSize','Select a left leg size'],
+          ['leftLegGraphicDisplay','leftLegGraphicDropdown','leftLegGraphic','Select a left leg graphic'],
+          ['rightLegSizeDisplay','rightLegSizeDropdown','rightLegSize','Select a right leg size'],
+          ['rightLegGraphicDisplay','rightLegGraphicDropdown','rightLegGraphic','Select a right leg graphic']
+        ];
+        pairs.forEach(([dispId, ddId, hiddenId, label])=>{
+          const disp = document.getElementById(dispId), dd = document.getElementById(ddId), hid = document.getElementById(hiddenId);
+          if (disp) disp.textContent = label;
+          if (dd) dd.classList.remove('open');
+          if (hid) hid.value = '';
+        });
       }
 
+      /* ---------- Toggle sections ---------- */
+      document.getElementById('showGraphicsBtn').addEventListener('click', () => {
+        const gSec = document.getElementById('graphicsSection');
+        const hSec = document.getElementById('hatSection');
+        const pSec = document.getElementById('pantsSection');
+        const gHidden = !(gSec.style.display === 'none' || gSec.style.display === '');
+        gSec.style.display = gHidden ? 'none' : 'block';
+        if (!gHidden) { hSec.style.display = 'none'; pSec.style.display = 'none'; clearHatSelections(); clearPantsSelections(); }
+        else { clearGraphicsSelections(); }
+      });
+      document.getElementById('showHatBtn').addEventListener('click', () => {
+        const gSec = document.getElementById('graphicsSection');
+        const hSec = document.getElementById('hatSection');
+        const pSec = document.getElementById('pantsSection');
+        const hHidden = !(hSec.style.display === 'none' || hSec.style.display === '');
+        hSec.style.display = hHidden ? 'none' : 'block';
+        if (!hHidden) { gSec.style.display = 'none'; pSec.style.display = 'none'; clearGraphicsSelections(); clearPantsSelections(); }
+        else { clearHatSelections(); }
+      });
+      document.getElementById('showPantsBtn').addEventListener('click', () => {
+        const gSec = document.getElementById('graphicsSection');
+        const hSec = document.getElementById('hatSection');
+        const pSec = document.getElementById('pantsSection');
+        const pHidden = !(pSec.style.display === 'none' || pSec.style.display === '');
+        pSec.style.display = pHidden ? 'none' : 'block';
+        if (!pHidden) { gSec.style.display = 'none'; hSec.style.display = 'none'; clearGraphicsSelections(); clearHatSelections(); }
+        else { clearPantsSelections(); }
+      });
+
+      /* ---------- Load dropdown options from Supabase ---------- */
+      async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
+        const { data } = await supabase
+          .from(table)
+          .select('name, thumbnail_url')
+          .order('order', { ascending: true });
+
+        const list = document.getElementById(listId);
+        const display = document.getElementById(displayId);
+        const hidden = document.getElementById(hiddenId);
+        (data || []).forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'unit-option';
+          div.innerHTML = `<img src="${item.thumbnail_url || ''}" alt="${item.name}" /><span>${item.name}</span>`;
+          div.addEventListener('click', () => {
+            display.textContent = item.name;
+            hidden.value = item.name;
+            document.getElementById(dropdownId).classList.remove('open');
+          });
+          list.appendChild(div);
+        });
+        display.addEventListener('click', () => document.getElementById(dropdownId).classList.toggle('open'));
+        document.addEventListener('click', (e) => {
+          if (!document.getElementById(dropdownId).contains(e.target)) {
+            document.getElementById(dropdownId).classList.remove('open');
+          }
+        });
+      }
+
+      /* Graphic T */
+      await loadOptions('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
+      await loadOptions('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
+      await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
+      await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
+      await loadOptions('Size', 'sizeList', 'sizeDisplay', 'size', 'sizeDropdown');
+      await loadOptions('Color', 'colorList', 'colorDisplay', 'color', 'colorDropdown');
+      await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown');
+      await loadOptions('Hat Sizes', 'hatStyleList', 'hatStyleDisplay', 'hatStyle', 'hatStyleDropdown');
+
+      /* Hat */
+      await loadOptions('front location', 'frontLocationHList', 'frontLocationHDisplay', 'frontLocationH', 'frontLocationHDropdown');
+      await loadOptions('graphic front', 'frontGraphicHList', 'frontGraphicHDisplay', 'frontGraphicH', 'frontGraphicHDropdown');
+      await loadOptions('back location', 'backLocationHList', 'backLocationHDisplay', 'backLocationH', 'backLocationHDropdown');
+      await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
+      await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
+      await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
+
+      /* Pants */
+      await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
+      await loadOptions('pant style', 'pantStyleList', 'pantStyleDisplay', 'pantStyle', 'pantStyleDropdown');
+      await loadOptions('pant size', 'pantSizeList', 'pantSizeDisplay', 'pantSize', 'pantSizeDropdown');
+      await loadOptions('rear size', 'rearSizeList', 'rearSizeDisplay', 'rearSize', 'rearSizeDropdown');
+      await loadOptions('rear graphic', 'rearGraphicList', 'rearGraphicDisplay', 'rearGraphic', 'rearGraphicDropdown');
+      await loadOptions('left leg size', 'leftLegSizeList', 'leftLegSizeDisplay', 'leftLegSize', 'leftLegSizeDropdown');
+      await loadOptions('left leg graphic', 'leftLegGraphicList', 'leftLegGraphicDisplay', 'leftLegGraphic', 'leftLegGraphicDropdown');
+      await loadOptions('right leg size', 'rightLegSizeList', 'rightLegSizeDisplay', 'rightLegSize', 'rightLegSizeDropdown');
+      await loadOptions('right leg graphic', 'rightLegGraphicList', 'rightLegGraphicDisplay', 'rightLegGraphic', 'rightLegGraphicDropdown');
+
+      /* Hat: snapback hides size */
       function updateHatSizeVisibility() {
         const hatTypeVal = (document.getElementById('hatType').value || '')
           .replace(/\s+/g, '')
@@ -464,7 +463,6 @@
           if (!hatStyleInput.value) hatStyleDisplay.textContent = 'Select a hat size';
         }
       }
-
       async function reloadHatColorOptions(sourceTable) {
         const list = document.getElementById('hatColorHList');
         const display = document.getElementById('hatColorHDisplay');
@@ -492,117 +490,11 @@
           list.appendChild(div);
         });
       }
-
       function updateHatColorSource() {
         const hatTypeVal = (document.getElementById('hatType').value || '').replace(/\s+/g, '').toLowerCase();
         const table = hatTypeVal === 'flexfit' ? 'flex color' : 'color';
         reloadHatColorOptions(table);
       }
-
-      document.getElementById('showGraphicsBtn').addEventListener('click', () => {
-        const gSec = document.getElementById('graphicsSection');
-        const hSec = document.getElementById('hatSection');
-        const pSec = document.getElementById('pantsSection');
-        const gHidden = !(gSec.style.display === 'none' || gSec.style.display === '');
-        gSec.style.display = gHidden ? 'none' : 'block';
-        if (!gHidden) {
-          hSec.style.display = 'none';
-          pSec.style.display = 'none';
-          clearHatSelections();
-          clearPantsSelections();
-        } else {
-          clearGraphicsSelections();
-        }
-      });
-      document.getElementById('showHatBtn').addEventListener('click', () => {
-        const gSec = document.getElementById('graphicsSection');
-        const hSec = document.getElementById('hatSection');
-        const pSec = document.getElementById('pantsSection');
-        const hHidden = !(hSec.style.display === 'none' || hSec.style.display === '');
-        hSec.style.display = 'none' === hSec.style.display ? '' : 'none';
-        hSec.style.display = hHidden ? 'none' : 'block';
-        if (!hHidden) {
-          gSec.style.display = 'none';
-          pSec.style.display = 'none';
-          clearGraphicsSelections();
-          clearPantsSelections();
-        } else {
-          clearHatSelections();
-        }
-      });
-      document.getElementById('showPantsBtn').addEventListener('click', () => {
-        const gSec = document.getElementById('graphicsSection');
-        const hSec = document.getElementById('hatSection');
-        const pSec = document.getElementById('pantsSection');
-        const pHidden = !(pSec.style.display === 'none' || pSec.style.display === '');
-        pSec.style.display = pHidden ? 'none' : 'block';
-        if (!pHidden) {
-          gSec.style.display = 'none';
-          hSec.style.display = 'none';
-          clearGraphicsSelections();
-          clearHatSelections();
-        } else {
-          clearPantsSelections();
-        }
-      });
-
-      async function loadOptions(table, listId, displayId, hiddenId, dropdownId) {
-        const { data } = await supabase
-          .from(table)
-          .select('name, thumbnail_url')
-          .order('order', { ascending: true });
-
-        const list = document.getElementById(listId);
-        const display = document.getElementById(displayId);
-        const hidden = document.getElementById(hiddenId);
-
-        (data || []).forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'unit-option';
-          div.innerHTML = `<img src="${item.thumbnail_url || ''}" alt="${item.name}" /><span>${item.name}</span>`;
-          div.addEventListener('click', () => {
-            display.textContent = item.name;
-            hidden.value = item.name;
-            document.getElementById(dropdownId).classList.remove('open');
-          });
-          list.appendChild(div);
-        });
-
-        display.addEventListener('click', () => document.getElementById(dropdownId).classList.toggle('open'));
-        document.addEventListener('click', (e) => {
-          if (!document.getElementById(dropdownId).contains(e.target)) {
-            document.getElementById(dropdownId).classList.remove('open');
-          }
-        });
-      }
-
-      await loadOptions('Front Location', 'frontLocationList', 'frontLocationDisplay', 'frontLocation', 'frontLocationDropdown');
-      await loadOptions('Back Location', 'backLocationList', 'backLocationDisplay', 'backLocation', 'backLocationDropdown');
-      await loadOptions('Graphic Back', 'backGraphicList', 'backGraphicDisplay', 'backGraphic', 'backGraphicDropdown');
-      await loadOptions('Graphic Front', 'frontGraphicList', 'frontGraphicDisplay', 'frontGraphic', 'frontGraphicDropdown');
-      await loadOptions('Size', 'sizeList', 'sizeDisplay', 'size', 'sizeDropdown');
-      await loadOptions('Color', 'colorList', 'colorDisplay', 'color', 'colorDropdown');
-      await loadOptions('Cut', 'cutList', 'cutDisplay', 'cut', 'cutDropdown');
-      await loadOptions('Hat Sizes', 'hatStyleList', 'hatStyleDisplay', 'hatStyle', 'hatStyleDropdown');
-
-      await loadOptions('front location', 'frontLocationHList', 'frontLocationHDisplay', 'frontLocationH', 'frontLocationHDropdown');
-      await loadOptions('graphic front', 'frontGraphicHList', 'frontGraphicHDisplay', 'frontGraphicH', 'frontGraphicHDropdown');
-      await loadOptions('back location', 'backLocationHList', 'backLocationHDisplay', 'backLocationH', 'backLocationHDropdown');
-      await loadOptions('graphic back', 'backGraphicHList', 'backGraphicHDisplay', 'backGraphicH', 'backGraphicHDropdown');
-      await loadOptions('hat type', 'hatTypeList', 'hatTypeDisplay', 'hatType', 'hatTypeDropdown');
-
-      await loadOptions('color', 'hatColorHList', 'hatColorHDisplay', 'colorH', 'hatColorHDropdown');
-
-      await loadOptions('pant color', 'pantColorList', 'pantColorDisplay', 'pantColor', 'pantColorDropdown');
-      await loadOptions('pant style', 'pantStyleList', 'pantStyleDisplay', 'pantStyle', 'pantStyleDropdown');
-      await loadOptions('pant size', 'pantSizeList', 'pantSizeDisplay', 'pantSize', 'pantSizeDropdown');
-      await loadOptions('rear size', 'rearSizeList', 'rearSizeDisplay', 'rearSize', 'rearSizeDropdown');
-      await loadOptions('rear graphic', 'rearGraphicList', 'rearGraphicDisplay', 'rearGraphic', 'rearGraphicDropdown');
-      await loadOptions('left leg size', 'leftLegSizeList', 'leftLegSizeDisplay', 'leftLegSize', 'leftLegSizeDropdown');
-      await loadOptions('left leg graphic', 'leftLegGraphicList', 'leftLegGraphicDisplay', 'leftLegGraphic', 'leftLegGraphicDropdown');
-      await loadOptions('right leg size', 'rightLegSizeList', 'rightLegSizeDisplay', 'rightLegSize', 'rightLegSizeDropdown');
-      await loadOptions('right leg graphic', 'rightLegGraphicList', 'rightLegGraphicDisplay', 'rightLegGraphic', 'rightLegGraphicDropdown');
-
       document.getElementById('hatTypeList')
         .addEventListener('click', () => setTimeout(() => {
           updateHatSizeVisibility();
@@ -612,94 +504,39 @@
       updateHatSizeVisibility();
       updateHatColorSource();
 
+      /* ---------- Cart + PayPal ---------- */
       const cart = [];
+      const cartListEl = document.getElementById('cartList');
+      const cartSection = document.getElementById('cartSection');
 
-      /* RENDER PAYPAL BUTTONS (re-renders on cart changes) */
-      function renderPayPalButtons() {
-        if (!window.paypal) return;
-        const container = document.getElementById('paypal-buttons-container');
-        if (!container) return;
-
-        container.innerHTML = '';
-
-        window._paypalButtons = paypal.Buttons({
-          style: { height: 45 },
-          onClick: (data, actions) => {
-            if (document.getElementById('cartList').children.length === 0) {
-              alert('Your cart is empty.');
-              return actions.reject();
-            }
-            return actions.resolve();
-          },
-          createOrder: (data, actions) => {
-            const total = calcCartTotal(cart).toFixed(2);
-            return actions.order.create({
-              purchase_units: [{
-                amount: { value: total },
-                description: 'KRAEZEYAPE Order'
-              }]
-            });
-          },
-          onApprove: async (data, actions) => {
-            try {
-              const capture = await actions.order.capture();
-              await placeOrder(capture);
-            } catch (err) {
-              console.error(err);
-              alert('Payment capture failed. Please try again.');
-            }
-          },
-          onCancel: () => {},
-          onError: (err) => {
-            console.error(err);
-            alert('Payment error. Please try again.');
-          }
-        });
-
-        window._paypalButtons.render('#paypal-buttons-container');
+      function priceForType(type) {
+        return type === 'Graphic T' ? PRICE_GRAPHIC_T : PRICE_DEFAULT;
       }
-
+      function cartTotal() {
+        return cart.reduce((sum, it) => sum + (it.price || priceForType(it.type)), 0);
+      }
       function updateCartTotal() {
-        const total = calcCartTotal(cart);
-        document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
-        renderPayPalButtons();
+        document.getElementById('cartTotal').textContent = `Cart Total: ${currencyFmt.format(cartTotal())}`;
+        renderPayPalButtons(); // keep buttons in sync
       }
 
-      function makeCollapsible(li) {
-        const header = li.querySelector('.cart-item-header');
-        const details = li.querySelector('.cart-item-details');
-        const chev = li.querySelector('.chev');
-        const removeBtn = li.querySelector('.remove-btn');
-
-        if (!header || !details || !chev) return;
-
-        details.style.display = 'none';
-        chev.textContent = '▸';
-
-        header.addEventListener('click', (e) => {
-          if (e.target.closest('.remove-btn')) return;
-          const isOpen = details.style.display !== 'none';
-          details.style.display = isOpen ? 'none' : 'block';
-          chev.textContent = isOpen ? '▸' : '▾';
-        });
-
-        if (removeBtn) {
-          removeBtn.addEventListener('click', (e) => e.stopPropagation());
-        }
+      function personalInfoComplete() {
+        const name = document.getElementById('name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const address = document.getElementById('address').value.trim();
+        const city = document.getElementById('city').value.trim();
+        return !!(name && phone && email && address && city);
       }
 
+      // Add to Cart click
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        /* Require personal info before adding to cart */
-        const nameVal = document.getElementById('name').value.trim();
-        const phoneVal = document.getElementById('phone').value.trim();
-        const emailVal = document.getElementById('email').value.trim();
-        const addressVal = document.getElementById('address').value.trim();
-        const cityVal = document.getElementById('city').value.trim();
-        if (!nameVal || !phoneVal || !emailVal || !addressVal || !cityVal) {
-          alert('Please fill out Full Name, Phone Number, Email, Address, and City before adding items to cart.');
+        if (!personalInfoComplete()) {
+          alert('Please fill out Full Name, Phone Number, Email, Address, and City before adding to cart.');
           return;
         }
 
+        // Gather selections
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
         const backLocation  = document.getElementById('backLocation').value;
@@ -726,6 +563,7 @@
         const rightLegSize    = document.getElementById('rightLegSize').value;
         const rightLegGraphic = document.getElementById('rightLegGraphic').value;
 
+        // completeness checks
         const gtFields         = [frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut];
         const hasAnyGraphicT   = gtFields.some(v => !!v);
         const graphicTComplete = gtFields.every(v => !!v);
@@ -735,7 +573,6 @@
         const hatFields = requireHatSize
           ? [colorH, hatType, hatStyle, frontLocationH, frontGraphicH, backLocationH, backGraphicH]
           : [colorH, hatType,          frontLocationH, frontGraphicH, backLocationH, backGraphicH];
-
         const hasAnyHat   = hatFields.some(v => !!v) || (!!hatType);
         const hatComplete = hatFields.every(v => !!v);
 
@@ -744,254 +581,241 @@
         const pantsComplete = pantsFields.every(v => !!v);
 
         const pickedCount = (hasAnyGraphicT?1:0) + (hasAnyHat?1:0) + (hasAnyPants?1:0);
-        if (pickedCount > 1) {
-          alert('Please choose either a Graphic T or a Hat, not both at the same time.');
-          return;
-        }
+        if (pickedCount > 1) { alert('Please choose only one category at a time.'); return; }
+        if (hasAnyGraphicT && !graphicTComplete) { alert('Please complete ALL Graphic T selections before adding to cart.'); return; }
+        if (hasAnyHat && !hatComplete) { alert('Please complete ALL Hat selections before adding to cart.'); return; }
+        if (hasAnyPants && !pantsComplete) { alert('Please complete ALL Pants selections before adding to cart.'); return; }
+        if (!hasAnyGraphicT && !hasAnyHat && !hasAnyPants) { alert('Please select either a Graphic T, Hat, or Pants option.'); return; }
 
-        if (hasAnyGraphicT && !graphicTComplete) {
-          alert('Please complete ALL Graphic T selections before adding to cart.');
-          return;
-        }
-        if (hasAnyHat && !hatComplete) {
-          alert('Please complete ALL Hat selections before adding to cart.');
-          return;
-        }
-        if (hasAnyPants && !pantsComplete) {
-          alert('Please complete ALL Pants selections before adding to cart.');
-          return;
-        }
-
-        const hasGraphicT = graphicTComplete;
-        const hasHat      = hatComplete;
-        const hasPants    = pantsComplete;
-
-        if (!hasGraphicT && !hasHat && !hasPants) {
-          alert('Please select either a Graphic T or a Hat option.');
-          return;
-        }
-
-        const cartSection = document.getElementById('cartSection');
-        const cartList    = document.getElementById('cartList');
         cartSection.style.display = 'block';
 
-        if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', _price: PRICE_GRAPHIC_T, frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
-          cart.push(itemGT);
+        if (graphicTComplete) {
+          const item = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut };
+          item.price = priceForType(item.type);
+          cart.push(item);
 
-          const liGT = document.createElement('li');
-          liGT.className = 'list-group-item';
-          liGT.innerHTML = `
-            <div class="cart-item-header d-flex justify-content-between align-items-center">
-              <span><strong>Item:</strong> Graphic T</span>
-              <div class="d-flex align-items-center gap-2">
-                <span class="chev">▸</span>
-                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
+          const li = document.createElement('li');
+          li.className = 'list-group-item';
+          li.innerHTML = `
+            <details open>
+              <summary class="cart-summary-line">Item: Graphic T — ${currencyFmt.format(item.price)}</summary>
+              <div style="display:flex; flex-direction:column; gap:2px; margin-top:6px;">
+                <span><strong>Cut:</strong> ${cut}</span>
+                <span><strong>Color:</strong> ${color}</span>
+                <span><strong>Size:</strong> ${size}</span>
+                <span><strong>Front Location:</strong> ${frontLocation}</span>
+                <span><strong>Front Graphic:</strong> ${frontGraphic}</span>
+                <span><strong>Back Location:</strong> ${backLocation}</span>
+                <span><strong>Back Graphic:</strong> ${backGraphic}</span>
               </div>
-            </div>
-            <div class="cart-item-details mt-2">
-              ${cut ? `<div><strong>Cut:</strong> ${cut}</div>`      : ''}
-              ${color ? `<div><strong>Color:</strong> ${color}</div>`: ''}
-              ${size ? `<div><strong>Size:</strong> ${size}</div>`   : ''}
-              ${frontLocation ? `<div><strong>Front Location:</strong> ${frontLocation}</div>` : ''}
-              ${frontGraphic  ? `<div><strong>Front Graphic:</strong> ${frontGraphic}</div>`   : ''}
-              ${backLocation  ? `<div><strong>Back Location:</strong> ${backLocation}</div>`   : ''}
-              ${backGraphic   ? `<div><strong>Back Graphic:</strong> ${backGraphic}</div>`     : ''}
-              <div><strong>Price:</strong> ${currency.format(itemGT._price)}</div>
-            </div>
+            </details>
+            <button class="btn btn-sm btn-danger mt-2">Remove</button>
           `;
-          liGT.querySelector('.remove-btn').addEventListener('click', () => {
-            const index = cart.indexOf(itemGT);
-            if (index > -1) cart.splice(index, 1);
-            liGT.remove();
-            if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
+          li.querySelector('button').addEventListener('click', () => {
+            const idx = cart.indexOf(item);
+            if (idx > -1) cart.splice(idx, 1);
+            li.remove();
+            if (cart.length === 0) cartSection.style.display = 'none';
             updateCartTotal();
           });
-          cartList.appendChild(liGT);
-          makeCollapsible(liGT);
+          cartListEl.appendChild(li);
         }
 
-        if (hasHat) {
-          const itemHat = { type: 'Hat', _price: PRICE_OTHERS, frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
-          cart.push(itemHat);
+        if (hatComplete) {
+          const item = { type: 'Hat', hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH };
+          item.price = priceForType(item.type);
+          cart.push(item);
 
-          const liHat = document.createElement('li');
-          liHat.className = 'list-group-item';
-          liHat.innerHTML = `
-            <div class="cart-item-header d-flex justify-content-between align-items-center">
-              <span><strong>Item:</strong> Hat</span>
-              <div class="d-flex align-items-center gap-2">
-                <span class="chev">▸</span>
-                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
+          const li = document.createElement('li');
+          li.className = 'list-group-item';
+          li.innerHTML = `
+            <details open>
+              <summary class="cart-summary-line">Item: Hat — ${currencyFmt.format(item.price)}</summary>
+              <div style="display:flex; flex-direction:column; gap:2px; margin-top:6px;">
+                <span><strong>Hat Color:</strong> ${colorH}</span>
+                <span><strong>Hat Type:</strong> ${hatType}</span>
+                <span><strong>Hat Size:</strong> ${hatStyle || 'n/a'}</span>
+                <span><strong>Front Location:</strong> ${frontLocationH}</span>
+                <span><strong>Front Graphic:</strong> ${frontGraphicH}</span>
+                <span><strong>Back Location:</strong> ${backLocationH}</span>
+                <span><strong>Back Graphic:</strong> ${backGraphicH}</span>
               </div>
-            </div>
-            <div class="cart-item-details mt-2">
-              ${colorH ? `<div><strong>Hat Color:</strong> ${colorH}</div>` : ''}
-              ${hatType ? `<div><strong>Hat Type:</strong> ${hatType}</div>` : ''}
-              <div><strong>Hat Size:</strong> ${hatStyle}</div>
-              <div><strong>Front Location:</strong> ${frontLocationH}</div>
-              <div><strong>Front Graphic:</strong> ${frontGraphicH}</div>
-              <div><strong>Back Location:</strong> ${backLocationH}</div>
-              <div><strong>Back Graphic:</strong> ${backGraphicH}</div>
-              <div><strong>Price:</strong> ${currency.format(itemHat._price)}</div>
-            </div>
+            </details>
+            <button class="btn btn-sm btn-danger mt-2">Remove</button>
           `;
-          liHat.querySelector('.remove-btn').addEventListener('click', () => {
-            const index = cart.indexOf(itemHat);
-            if (index > -1) cart.splice(index, 1);
-            liHat.remove();
-            if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
+          li.querySelector('button').addEventListener('click', () => {
+            const idx = cart.indexOf(item);
+            if (idx > -1) cart.splice(idx, 1);
+            li.remove();
+            if (cart.length === 0) cartSection.style.display = 'none';
             updateCartTotal();
           });
-          cartList.appendChild(liHat);
-          makeCollapsible(liHat);
+          cartListEl.appendChild(li);
         }
 
-        if (hasPants) {
-          const itemPants = { type: 'Pants', _price: PRICE_OTHERS, frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
-          cart.push(itemPants);
+        if (pantsComplete) {
+          const item = { type: 'Pants', pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
+          item.price = priceForType(item.type);
+          cart.push(item);
 
-          const liPants = document.createElement('li');
-          liPants.className = 'list-group-item';
-          liPants.innerHTML = `
-            <div class="cart-item-header d-flex justify-content-between align-items-center">
-              <span><strong>Item:</strong> Pants</span>
-              <div class="d-flex align-items-center gap-2">
-                <span class="chev">▸</span>
-                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
+          const li = document.createElement('li');
+          li.className = 'list-group-item';
+          li.innerHTML = `
+            <details open>
+              <summary class="cart-summary-line">Item: Pants — ${currencyFmt.format(item.price)}</summary>
+              <div style="display:flex; flex-direction:column; gap:2px; margin-top:6px;">
+                <span><strong>Pant Color:</strong> ${pantColor}</span>
+                <span><strong>Pant Style:</strong> ${pantStyle}</span>
+                <span><strong>Pant Size:</strong> ${pantSize}</span>
+                <span><strong>Rear Size:</strong> ${rearSize}</span>
+                <span><strong>Rear Graphic:</strong> ${rearGraphic}</span>
+                <span><strong>Left Leg Size:</strong> ${leftLegSize}</span>
+                <span><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</span>
+                <span><strong>Right Leg Size:</strong> ${rightLegSize}</span>
+                <span><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</span>
               </div>
-            </div>
-            <div class="cart-item-details mt-2">
-              ${pantColor ? `<div><strong>Pant Color:</strong> ${pantColor}</div>` : ''}
-              ${pantStyle ? `<div><strong>Pant Style:</strong> ${pantStyle}</div>` : ''}
-              ${pantSize ? `<div><strong>Pant Size:</strong> ${pantSize}</div>` : ''}
-              ${rearSize ? `<div><strong>Rear Size:</strong> ${rearSize}</div>` : ''}
-              ${rearGraphic ? `<div><strong>Rear Graphic:</strong> ${rearGraphic}</div>` : ''}
-              ${leftLegSize ? `<div><strong>Left Leg Size:</strong> ${leftLegSize}</div>` : ''}
-              ${leftLegGraphic ? `<div><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</div>` : ''}
-              ${rightLegSize ? `<div><strong>Right Leg Size:</strong> ${rightLegSize}</div>` : ''}
-              ${rightLegGraphic ? `<div><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</div>` : ''}
-              <div><strong>Price:</strong> ${currency.format(itemPants._price)}</div>
-            </div>
+            </details>
+            <button class="btn btn-sm btn-danger mt-2">Remove</button>
           `;
-          liPants.querySelector('.remove-btn').addEventListener('click', () => {
-            const index = cart.indexOf(itemPants);
-            if (index > -1) cart.splice(index, 1);
-            liPants.remove();
-            if (cart.length === 0) document.getElementById('cartSection').style.display = 'none';
+          li.querySelector('button').addEventListener('click', () => {
+            const idx = cart.indexOf(item);
+            if (idx > -1) cart.splice(idx, 1);
+            li.remove();
+            if (cart.length === 0) cartSection.style.display = 'none';
             updateCartTotal();
           });
-          cartList.appendChild(liPants);
-          makeCollapsible(liPants);
+          cartListEl.appendChild(li);
         }
 
         updateCartTotal();
       });
 
-      /* ================================
-         PAYMENT-GATED FINALIZATION
-         ================================ */
+      // Render PayPal Buttons (standard)
+      let buttonsInstance = null;
+      function renderPayPalButtons() {
+        const container = document.getElementById('paypalButtons');
+        if (!container) return;
 
-      async function placeOrder(paymentDetails) {
-        const name = document.getElementById('name').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const address = document.getElementById('address').value.trim();
-        const city = document.getElementById('city').value.trim();
+        // Clear existing instance
+        container.innerHTML = '';
 
-        if (cart.length === 0) {
-          alert('Your cart is empty.');
-          return;
-        }
+        if (cart.length === 0) return;
 
-        for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic, _price } = item;
-          await supabase.from('KRAEZEYAPE ORDER').insert([{
-            name, phone, email, address, city,
-            front_location: frontLocation || null,
-            front_graphic: frontGraphic || null,
-            back_location: backLocation || null,
-            back_graphic: backGraphic || null,
-            size: size || null,
-            color: color || null,
-            cut: cut || null,
-            hat_size: hatStyle || null,
-            hat_type: hatType || null,
-            color_h: colorH || null,
-            front_locationh: frontLocationH || null,
-            graphic_fronth: frontGraphicH || null,
-            back_locationh: backLocationH || null,
-            graphic_backh: backGraphicH || null,
-            pant_color: pantColor || null,
-            pant_style: pantStyle || null,
-            pant_size: pantSize || null,
-            rear_size: rearSize || null,
-            rear_graphic: rearGraphic || null,
-            leftleg_size: leftLegSize || null,
-            leftleg_graphic: leftLegGraphic || null,
-            rightleg_size: rightLegSize || null,
-            rightleg_graphic: rightLegGraphic || null,
-            price: _price
-          }]);
-        }
+        buttonsInstance = paypal.Buttons({
+          style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'paypal' },
+          createOrder: function(data, actions) {
+            return actions.order.create({
+              purchase_units: [{
+                amount: { value: cartTotal().toFixed(2) },
+                description: 'KRAEZEYAPE Order'
+              }]
+            });
+          },
+          onApprove: async function(data, actions) {
+            const details = await actions.order.capture();
 
-        const items = `<ul style="list-style:none; padding-left:0; margin:0;">
-          ${cart.map((it, idx) =>
-            `<li>
-              ${it.type ? `Item: ${it.type}<br>` : ''}
-              ${it.cut ? `Cut: ${it.cut}<br>` : ''}
-              ${it.color ? `Color: ${it.color}<br>` : ''}
-              ${it.size ? `Size: ${it.size}<br>` : ''}
-              ${it.frontLocation ? `Front Location: ${it.frontLocation}<br>` : ''}
-              ${it.frontGraphic ? `Front Graphic: ${it.frontGraphic}<br>` : ''}
-              ${it.backLocation ? `Back Location: ${it.backLocation}<br>` : ''}
-              ${it.backGraphic ? `Back Graphic: ${it.backGraphic}<br>` : ''}
-              ${it.colorH ? `Hat Color: ${it.colorH}<br>` : ''}
-              ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}
-              ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
-              ${it.frontLocationH ? `Front Location: ${it.frontLocationH}<br>` : ''}
-              ${it.frontGraphicH ? `Front Graphic: ${it.frontGraphicH}<br>` : ''}
-              ${it.backLocationH ? `Back Location: ${it.backLocationH}<br>` : ''}
-              ${it.backGraphicH ? `Back Graphic: ${it.backGraphicH}<br>` : ''}
-              ${it.pantColor ? `Pant Color: ${it.pantColor}<br>` : ''}
-              ${it.pantStyle ? `Pant Style: ${it.pantStyle}<br>` : ''}
-              ${it.pantSize ? `Pant Size: ${it.pantSize}<br>` : ''}
-              ${it.rearSize ? `Rear Size: ${it.rearSize}<br>` : ''}
-              ${it.rearGraphic ? `Rear Graphic: ${it.rearGraphic}<br>` : ''}
-              ${it.leftLegSize ? `Left Leg Size: ${it.leftLegSize}<br>` : ''}
-              ${it.leftLegGraphic ? `Left Leg Graphic: ${it.leftLegGraphic}<br>` : ''}
-              ${it.rightLegSize ? `Right Leg Size: ${it.rightLegSize}<br>` : ''}
-              ${it.rightLegGraphic ? `Right Leg Graphic: ${it.rightLegGraphic}<br>` : ''}
-              Price: ${currency.format(it._price)}
-            </li>${idx < cart.length - 1 ? '<hr>' : ''}`
-          ).join('')}
-        </ul>`;
+            // After successful payment: insert into Supabase + send EmailJS
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const city = document.getElementById('city').value.trim();
 
-        const grand_total = currency.format(calcCartTotal(cart));
-        const params = { name, phone, email, address, city, items, grand_total };
+            for (const it of cart) {
+              const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut,
+                      hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH,
+                      pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic } = it;
+              await supabase.from('KRAEZEYAPE ORDER').insert([{
+                name, phone, email, address, city,
+                front_location: frontLocation || null,
+                front_graphic: frontGraphic || null,
+                back_location: backLocation || null,
+                back_graphic: backGraphic || null,
+                size: size || null,
+                color: color || null,
+                cut: cut || null,
+                hat_size: hatStyle || null,
+                hat_type: hatType || null,
+                color_h: colorH || null,
+                front_locationh: frontLocationH || null,
+                graphic_fronth: frontGraphicH || null,
+                back_locationh: backLocationH || null,
+                graphic_backh: backGraphicH || null,
+                pant_color: pantColor || null,
+                pant_style: pantStyle || null,
+                pant_size: pantSize || null,
+                rear_size: rearSize || null,
+                rear_graphic: rearGraphic || null,
+                leftleg_size: leftLegSize || null,
+                leftleg_graphic: leftLegGraphic || null,
+                rightleg_size: rightLegSize || null,
+                rightleg_graphic: rightLegGraphic || null,
+                price: it.price || priceForType(it.type),
+                paypal_order_id: details.id || null
+              }]);
+            }
 
-        emailjs.send("service_9fvjwls", "template_gveha9l", params);
-        emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
+            const itemsHtml = `<ul style="list-style:none; padding-left:0; margin:0;">
+              ${cart.map((it, idx) =>
+                `<li>
+                  ${it.type ? `Item: ${it.type}<br>` : ''}
+                  ${it.cut ? `Cut: ${it.cut}<br>` : ''}
+                  ${it.color ? `Color: ${it.color}<br>` : ''}
+                  ${it.size ? `Size: ${it.size}<br>` : ''}
+                  ${it.frontLocation ? `Front Location: ${it.frontLocation}<br>` : ''}
+                  ${it.frontGraphic ? `Front Graphic: ${it.frontGraphic}<br>` : ''}
+                  ${it.backLocation ? `Back Location: ${it.backLocation}<br>` : ''}
+                  ${it.backGraphic ? `Back Graphic: ${it.backGraphic}<br>` : ''}
+                  ${it.colorH ? `Hat Color: ${it.colorH}<br>` : ''}
+                  ${it.hatType ? `Hat Type: ${it.hatType}<br>` : ''}
+                  ${it.hatStyle ? `Hat Size: ${it.hatStyle}<br>` : ''}
+                  ${it.frontLocationH ? `Front Location: ${it.frontLocationH}<br>` : ''}
+                  ${it.frontGraphicH ? `Front Graphic: ${it.frontGraphicH}<br>` : ''}
+                  ${it.backLocationH ? `Back Location: ${it.backLocationH}<br>` : ''}
+                  ${it.backGraphicH ? `Back Graphic: ${it.backGraphicH}<br>` : ''}
+                  ${it.pantColor ? `Pant Color: ${it.pantColor}<br>` : ''}
+                  ${it.pantStyle ? `Pant Style: ${it.pantStyle}<br>` : ''}
+                  ${it.pantSize ? `Pant Size: ${it.pantSize}<br>` : ''}
+                  ${it.rearSize ? `Rear Size: ${it.rearSize}<br>` : ''}
+                  ${it.rearGraphic ? `Rear Graphic: ${it.rearGraphic}<br>` : ''}
+                  ${it.leftLegSize ? `Left Leg Size: ${it.leftLegSize}<br>` : ''}
+                  ${it.leftLegGraphic ? `Left Leg Graphic: ${it.leftLegGraphic}<br>` : ''}
+                  ${it.rightLegSize ? `Right Leg Size: ${it.rightLegSize}<br>` : ''}
+                  ${it.rightLegGraphic ? `Right Leg Graphic: ${it.rightLegGraphic}<br>` : ''}
+                  Price: ${currencyFmt.format(it.price || priceForType(it.type))}
+                </li>${idx < cart.length - 1 ? '<hr>' : ''}`
+              ).join('')}
+            </ul>`;
 
-        document.getElementById('successMessage').style.display = 'block';
-        setTimeout(() => { document.getElementById('successMessage').style.display = 'none'; }, 3000);
+            const grand_total = currencyFmt.format(cartTotal());
+            const params = { name, phone, email, address, city, items: itemsHtml, grand_total };
+            emailjs.send("service_9fvjwls", "template_gveha9l", params);
+            emailjs.send("service_9fvjwls", "template_jdtvkgj", params);
 
-        const cartListEl = document.getElementById('cartList');
-        cart.length = 0;
-        cartListEl.innerHTML = '';
-        document.getElementById('cartSection').style.display = 'none';
-        updateCartTotal();
+            document.getElementById('successMessage').style.display = 'block';
+            setTimeout(() => { document.getElementById('successMessage').style.display = 'none'; }, 3000);
 
-        document.getElementById('bookingForm').reset();
-        clearGraphicsSelections();
-        clearHatSelections();
-        clearPantsSelections();
-        document.getElementById('graphicsSection').style.display = 'none';
-        document.getElementById('hatSection').style.display = 'none';
-        document.getElementById('pantsSection').style.display = 'none';
+            // Reset UI
+            cart.length = 0;
+            cartListEl.innerHTML = '';
+            cartSection.style.display = 'none';
+            updateCartTotal();
+            document.getElementById('bookingForm').reset();
+            clearGraphicsSelections(); clearHatSelections(); clearPantsSelections();
+            document.getElementById('graphicsSection').style.display = 'none';
+            document.getElementById('hatSection').style.display = 'none';
+            document.getElementById('pantsSection').style.display = 'none';
+          },
+          onError: function(err) {
+            console.error('PayPal error', err);
+            alert('There was a problem processing the payment. Please try again.');
+          }
+        });
+
+        buttonsInstance.render(container);
       }
 
-      // Initial render of payment buttons
+      // Initial (empty)
       renderPayPalButtons();
     });
   </script>
