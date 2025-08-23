@@ -33,16 +33,16 @@
     .unit-option {
       display: flex;
       align-items: center;
-      padding: 18px 16px;       /* more padding */
+      padding: 18px 16px;
       cursor: pointer;
-      font-size: 1.25rem;       /* larger text */
+      font-size: 1.25rem;
       line-height: 1.4;
     }
     .unit-option:hover { background: #f2f6ff; }
 
     /* Bigger thumbnails, still preserving aspect ratio */
     .unit-option img {
-      width: 72px;              /* bigger image */
+      width: 72px;
       height: 72px;
       aspect-ratio: 1 / 1;
       object-fit: contain;
@@ -59,7 +59,7 @@
       background: white;
       border: 1px solid #ccc;
       border-radius: 8px;
-      max-height: 480px;        /* increased height */
+      max-height: 480px;
       overflow-y: auto;
       z-index: 10;
       display: none;
@@ -79,6 +79,22 @@
     #showPantsBtn.btn-success:hover {
       background-color: #FFB6C1;
       color: #000;
+    }
+
+    /* --- Minimal styles for collapsible cart items --- */
+    .cart-unit {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      padding: 2px 0;
+    }
+    .cart-unit:hover { opacity: 0.9; }
+    .toggle-icon {
+      font-weight: bold;
+      font-size: 1.25rem;
+      line-height: 1;
     }
   </style>
 </head>
@@ -595,6 +611,24 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
+      /* Helper to wire up collapsible behavior for a cart <li> */
+      function setupCollapsible(li) {
+        const header = li.querySelector('.cart-unit');
+        const details = li.querySelector('.cart-details');
+        const icon = li.querySelector('.toggle-icon');
+        if (!header || !details || !icon) return;
+
+        // Start collapsed
+        details.style.display = 'none';
+        icon.textContent = '+';
+
+        header.addEventListener('click', () => {
+          const open = details.style.display !== 'none';
+          details.style.display = open ? 'none' : 'block';
+          icon.textContent = open ? '+' : '–';
+        });
+      }
+
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
@@ -678,18 +712,23 @@
           const liGT = document.createElement('li');
           liGT.className = 'list-group-item d-flex justify-content-between align-items-start';
           liGT.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:2px;">
-              <span><strong>Item:</strong> Graphic T</span>
-              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>`      : ''}
-              ${color ? `<span><strong>Color:</strong> ${color}</span>`: ''}
-              ${size ? `<span><strong>Size:</strong> ${size}</span>`   : ''}
-              ${frontLocation ? `<span><strong>Front Location:</strong> ${frontLocation}</span>` : ''}
-              ${frontGraphic  ? `<span><strong>Front Graphic:</strong> ${frontGraphic}</span>`   : ''}
-              ${backLocation  ? `<span><strong>Back Location:</strong> ${backLocation}</span>`   : ''}
-              ${backGraphic   ? `<span><strong>Back Graphic:</strong> ${backGraphic}</span>`     : ''}
-              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+            <div style="flex:1 1 auto;">
+              <div class="cart-unit">
+                <span><strong>Unit:</strong> Graphic T</span>
+                <span class="toggle-icon">+</span>
+              </div>
+              <div class="cart-details mt-2" style="display:none;">
+                ${cut ? `<div><strong>Cut:</strong> ${cut}</div>`      : ''}
+                ${color ? `<div><strong>Color:</strong> ${color}</div>`: ''}
+                ${size ? `<div><strong>Size:</strong> ${size}</div>`   : ''}
+                ${frontLocation ? `<div><strong>Front Location:</strong> ${frontLocation}</div>` : ''}
+                ${frontGraphic  ? `<div><strong>Front Graphic:</strong> ${frontGraphic}</div>`   : ''}
+                ${backLocation  ? `<div><strong>Back Location:</strong> ${backLocation}</div>`   : ''}
+                ${backGraphic   ? `<div><strong>Back Graphic:</strong> ${backGraphic}</div>`     : ''}
+                <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+              </div>
             </div>
-            <button class="btn btn-sm btn-danger">X</button>
+            <button class="btn btn-sm btn-danger ms-2">X</button>
           `;
           liGT.querySelector('button').addEventListener('click', () => {
             const index = cart.indexOf(itemGT);
@@ -699,6 +738,7 @@
             updateCartTotal();
           });
           cartList.appendChild(liGT);
+          setupCollapsible(liGT);
         }
 
         if (hasHat) {
@@ -708,18 +748,23 @@
           const liHat = document.createElement('li');
           liHat.className = 'list-group-item d-flex justify-content-between align-items-start';
           liHat.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:2px;">
-              <span><strong>Item:</strong> Hat</span>
-              ${colorH ? `<span><strong>Hat Color:</strong> ${colorH}</span>` : ''}
-              ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}
-              <span><strong>Hat Size:</strong> ${hatStyle}</span>
-              <span><strong>Front Location:</strong> ${frontLocationH}</span>
-              <span><strong>Front Graphic:</strong> ${frontGraphicH}</span>
-              <span><strong>Back Location:</strong> ${backLocationH}</span>
-              <span><strong>Back Graphic:</strong> ${backGraphicH}</span>
-              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+            <div style="flex:1 1 auto;">
+              <div class="cart-unit">
+                <span><strong>Unit:</strong> Hat</span>
+                <span class="toggle-icon">+</span>
+              </div>
+              <div class="cart-details mt-2" style="display:none;">
+                ${colorH ? `<div><strong>Hat Color:</strong> ${colorH}</div>` : ''}
+                ${hatType ? `<div><strong>Hat Type:</strong> ${hatType}</div>` : ''}
+                <div><strong>Hat Size:</strong> ${hatStyle}</div>
+                <div><strong>Front Location:</strong> ${frontLocationH}</div>
+                <div><strong>Front Graphic:</strong> ${frontGraphicH}</div>
+                <div><strong>Back Location:</strong> ${backLocationH}</div>
+                <div><strong>Back Graphic:</strong> ${backGraphicH}</div>
+                <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+              </div>
             </div>
-            <button class="btn btn-sm btn-danger">X</button>
+            <button class="btn btn-sm btn-danger ms-2">X</button>
           `;
           liHat.querySelector('button').addEventListener('click', () => {
             const index = cart.indexOf(itemHat);
@@ -729,6 +774,7 @@
             updateCartTotal();
           });
           cartList.appendChild(liHat);
+          setupCollapsible(liHat);
         }
 
         if (hasPants) {
@@ -738,20 +784,25 @@
           const liPants = document.createElement('li');
           liPants.className = 'list-group-item d-flex justify-content-between align-items-start';
           liPants.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:2px;">
-              <span><strong>Item:</strong> Pants</span>
-              ${pantColor ? `<span><strong>Pant Color:</strong> ${pantColor}</span>` : ''}
-              ${pantStyle ? `<span><strong>Pant Style:</strong> ${pantStyle}</span>` : ''}
-              ${pantSize ? `<span><strong>Pant Size:</strong> ${pantSize}</span>` : ''}
-              ${rearSize ? `<span><strong>Rear Size:</strong> ${rearSize}</span>` : ''}
-              ${rearGraphic ? `<span><strong>Rear Graphic:</strong> ${rearGraphic}</span>` : ''}
-              ${leftLegSize ? `<span><strong>Left Leg Size:</strong> ${leftLegSize}</span>` : ''}
-              ${leftLegGraphic ? `<span><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</span>` : ''}
-              ${rightLegSize ? `<span><strong>Right Leg Size:</strong> ${rightLegSize}</span>` : ''}
-              ${rightLegGraphic ? `<span><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</span>` : ''}
-              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
+            <div style="flex:1 1 auto;">
+              <div class="cart-unit">
+                <span><strong>Unit:</strong> Pants</span>
+                <span class="toggle-icon">+</span>
+              </div>
+              <div class="cart-details mt-2" style="display:none;">
+                ${pantColor ? `<div><strong>Pant Color:</strong> ${pantColor}</div>` : ''}
+                ${pantStyle ? `<div><strong>Pant Style:</strong> ${pantStyle}</div>` : ''}
+                ${pantSize ? `<div><strong>Pant Size:</strong> ${pantSize}</div>` : ''}
+                ${rearSize ? `<div><strong>Rear Size:</strong> ${rearSize}</div>` : ''}
+                ${rearGraphic ? `<div><strong>Rear Graphic:</strong> ${rearGraphic}</div>` : ''}
+                ${leftLegSize ? `<div><strong>Left Leg Size:</strong> ${leftLegSize}</div>` : ''}
+                ${leftLegGraphic ? `<div><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</div>` : ''}
+                ${rightLegSize ? `<div><strong>Right Leg Size:</strong> ${rightLegSize}</div>` : ''}
+                ${rightLegGraphic ? `<div><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</div>` : ''}
+                <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+              </div>
             </div>
-            <button class="btn btn-sm btn-danger">X</button>
+            <button class="btn btn-sm btn-danger ms-2">X</button>
           `;
           liPants.querySelector('button').addEventListener('click', () => {
             const index = cart.indexOf(itemPants);
@@ -761,6 +812,7 @@
             updateCartTotal();
           });
           cartList.appendChild(liPants);
+          setupCollapsible(liPants);
         }
 
         updateCartTotal();
