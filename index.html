@@ -611,6 +611,54 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
+      /* === Require personal info before adding to cart === */
+      function requirePersonalInfo() {
+        const fields = [
+          { id: 'name',    label: 'Full Name' },
+          { id: 'phone',   label: 'Phone Number' },
+          { id: 'email',   label: 'Email' },
+          { id: 'address', label: 'Address' },
+          { id: 'city',    label: 'City' },
+        ];
+        const invalidIds = [];
+
+        fields.forEach(({ id, label }) => {
+          const el = document.getElementById(id);
+          const val = (el?.value || '').trim();
+
+          // reset any previous highlight
+          el.classList.remove('is-invalid');
+          el.style.borderColor = '';
+
+          const isEmail = id === 'email';
+          const badEmail = isEmail && val && !el.checkValidity();
+
+          if (!val || badEmail) {
+            invalidIds.push({ id, label });
+            el.classList.add('is-invalid');
+            el.style.borderColor = '#dc3545';
+          }
+        });
+
+        if (invalidIds.length) {
+          alert('Please complete: ' + invalidIds.map(f => f.label).join(', ') + ' before adding to cart.');
+          const firstBad = document.getElementById(invalidIds[0].id);
+          if (firstBad) firstBad.focus();
+          return false;
+        }
+        return true;
+      }
+
+      // remove red outline once user types
+      ['name','phone','email','address','city'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => {
+          el.classList.remove('is-invalid');
+          el.style.borderColor = '';
+        });
+      });
+      /* === End personal info requirement === */
+
       /* Helper to wire up collapsible behavior for a cart <li> */
       function setupCollapsible(li) {
         const header = li.querySelector('.cart-unit');
@@ -630,6 +678,9 @@
       }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
+        // Require personal fields BEFORE any cart action
+        if (!requirePersonalInfo()) return;
+
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
         const backLocation  = document.getElementById('backLocation').value;
