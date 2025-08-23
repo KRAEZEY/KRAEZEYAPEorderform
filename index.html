@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>KRAEZEYAPE ORDER FORM</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <!-- PayPal JS SDK (PayPal + Venmo) -->
-  <script src="https://www.paypal.com/sdk/js?client-id=AV2Sea57YslMINpQYTQjEf6iNIPchH9Oin_RjTd2YNhXVnguC9JyIiXCNbvNGhRROTQi7-1kEZscdywN&enable-funding=venmo&currency=USD"></script>
   <style>
     body {
       background-image:
@@ -35,15 +33,16 @@
     .unit-option {
       display: flex;
       align-items: center;
-      padding: 18px 16px;
+      padding: 18px 16px;       /* more padding */
       cursor: pointer;
-      font-size: 1.25rem;
+      font-size: 1.25rem;       /* larger text */
       line-height: 1.4;
     }
     .unit-option:hover { background: #f2f6ff; }
 
+    /* Bigger thumbnails, still preserving aspect ratio */
     .unit-option img {
-      width: 72px;
+      width: 72px;              /* bigger image */
       height: 72px;
       aspect-ratio: 1 / 1;
       object-fit: contain;
@@ -53,13 +52,14 @@
       flex: 0 0 auto;
     }
 
+    /* Taller dropdown container to fit bigger options comfortably */
     .unit-list {
       position: absolute;
       width: 100%;
       background: white;
       border: 1px solid #ccc;
       border-radius: 8px;
-      max-height: 480px;
+      max-height: 480px;        /* increased height */
       overflow-y: auto;
       z-index: 10;
       display: none;
@@ -80,37 +80,6 @@
       background-color: #FFB6C1;
       color: #000;
     }
-
-    /* Collapsible cart item styles */
-    .cart-item-header {
-      cursor: pointer;
-      padding: 8px 12px;
-      background: #f8f9ff;
-      border-radius: 6px;
-      user-select: none;
-    }
-    .cart-item-details {
-      padding: 8px 12px;
-    }
-    .cart-item-header .chev {
-      font-weight: bold;
-      line-height: 1;
-    }
-
-    /* ---------- Force dropdowns above PayPal (only changes below) ---------- */
-    .booking-form, form, #cartSection { position: relative; overflow: visible; z-index: auto; }
-    /* Make all dropdown stacks sit on top */
-    .unit-dropdown { position: relative; z-index: 2147483646 !important; }
-    .unit-dropdown .unit-list { position: absolute; z-index: 2147483647 !important; }
-
-    /* Push PayPal below everything */
-    #paypal-buttons-container { position: relative !important; z-index: 0 !important; }
-    #paypal-buttons-container * { position: relative !important; z-index: 0 !important; }
-    #paypal-buttons-container iframe { position: relative !important; z-index: 0 !important; }
-
-    /* While ANY dropdown is open, disable PayPal clicks so it can’t “cover” */
-    form:has(.unit-dropdown.open) #paypal-buttons-container { pointer-events: none; }
-    /* ---------------------------------------------------------------------- */
   </style>
 </head>
 <body>
@@ -284,7 +253,7 @@
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-      <!-- Payment buttons appear in cart section -->
+      <button type="submit" class="btn btn-primary w-100">Purchase</button>
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
@@ -295,7 +264,6 @@
       <h5>Cart</h5>
       <ul class="list-group" id="cartList"></ul>
       <div id="cartTotal" class="mt-2 fw-bold"></div>
-      <div id="paypal-buttons-container" class="mt-3"></div>
     </div>
   </div>
 
@@ -305,22 +273,14 @@
     (function () { emailjs.init("3Uw1krJxmrVWmbbln"); })();
   </script>
 
-  <!-- Your original JS (unchanged) -->
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      /* === Pricing === */
-      const PRICE_GRAPHIC_T = 1;   // $1 test price for Graphic T
-      const PRICE_OTHERS    = 50;  // $50 for Hat & Pants (unchanged)
-      const ITEM_PRICE = 50;       // kept for compatibility (not used for totals)
-
+      const ITEM_PRICE = 50;
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjd3dheWdqZGlvcGJpcXN1anlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MzQ0ODgsImV4cCI6MjA3MDAxMDQ4OH0.w-VOVhfaJsktCy0RF3e_7UEg-aDGy5PYcF8o0az8Kz4';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-      const getItemPrice = (type) => (type === 'Graphic T' ? PRICE_GRAPHIC_T : PRICE_OTHERS);
-      const calcCartTotal = (cart) => cart.reduce((sum, it) => sum + (it._price || getItemPrice(it.type)), 0);
 
       function clearGraphicsSelections() {
         const displays = [
@@ -630,92 +590,12 @@
 
       const cart = [];
 
-      /* RENDER PAYPAL BUTTONS (re-renders on cart changes) */
-      function renderPayPalButtons() {
-        if (!window.paypal) return;
-        const container = document.getElementById('paypal-buttons-container');
-        if (!container) return;
-
-        container.innerHTML = '';
-
-        window._paypalButtons = paypal.Buttons({
-          style: { height: 45 },
-          onClick: (data, actions) => {
-            if (document.getElementById('cartList').children.length === 0) {
-              alert('Your cart is empty.');
-              return actions.reject();
-            }
-            return actions.resolve();
-          },
-          createOrder: (data, actions) => {
-            const total = calcCartTotal(cart).toFixed(2);
-            return actions.order.create({
-              purchase_units: [{
-                amount: { value: total },
-                description: 'KRAEZEYAPE Order'
-              }]
-            });
-          },
-          onApprove: async (data, actions) => {
-            try {
-              const capture = await actions.order.capture();
-              await placeOrder(capture);
-            } catch (err) {
-              console.error(err);
-              alert('Payment capture failed. Please try again.');
-            }
-          },
-          onCancel: () => {},
-          onError: (err) => {
-            console.error(err);
-            alert('Payment error. Please try again.');
-          }
-        });
-
-        window._paypalButtons.render('#paypal-buttons-container');
-      }
-
       function updateCartTotal() {
-        const total = calcCartTotal(cart);
+        const total = cart.length * ITEM_PRICE;
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
-        renderPayPalButtons();
-      }
-
-      function makeCollapsible(li) {
-        const header = li.querySelector('.cart-item-header');
-        const details = li.querySelector('.cart-item-details');
-        const chev = li.querySelector('.chev');
-        const removeBtn = li.querySelector('.remove-btn');
-
-        if (!header || !details || !chev) return;
-
-        details.style.display = 'none';
-        chev.textContent = '▸';
-
-        header.addEventListener('click', (e) => {
-          if (e.target.closest('.remove-btn')) return;
-          const isOpen = details.style.display !== 'none';
-          details.style.display = isOpen ? 'none' : 'block';
-          chev.textContent = isOpen ? '▸' : '▾';
-        });
-
-        if (removeBtn) {
-          removeBtn.addEventListener('click', (e) => e.stopPropagation());
-        }
       }
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
-        /* Require personal info before adding to cart */
-        const nameVal = document.getElementById('name').value.trim();
-        const phoneVal = document.getElementById('phone').value.trim();
-        const emailVal = document.getElementById('email').value.trim();
-        const addressVal = document.getElementById('address').value.trim();
-        const cityVal = document.getElementById('city').value.trim();
-        if (!nameVal || !phoneVal || !emailVal || !addressVal || !cityVal) {
-          alert('Please fill out Full Name, Phone Number, Email, Address, and City before adding items to cart.');
-          return;
-        }
-
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
         const backLocation  = document.getElementById('backLocation').value;
@@ -792,31 +672,26 @@
         cartSection.style.display = 'block';
 
         if (hasGraphicT) {
-          const itemGT = { type: 'Graphic T', _price: PRICE_GRAPHIC_T, frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
+          const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
-          liGT.className = 'list-group-item';
+          liGT.className = 'list-group-item d-flex justify-content-between align-items-start';
           liGT.innerHTML = `
-            <div class="cart-item-header d-flex justify-content-between align-items-center">
+            <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Graphic T</span>
-              <div class="d-flex align-items-center gap-2">
-                <span class="chev">▸</span>
-                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
-              </div>
+              ${cut ? `<span><strong>Cut:</strong> ${cut}</span>`      : ''}
+              ${color ? `<span><strong>Color:</strong> ${color}</span>`: ''}
+              ${size ? `<span><strong>Size:</strong> ${size}</span>`   : ''}
+              ${frontLocation ? `<span><strong>Front Location:</strong> ${frontLocation}</span>` : ''}
+              ${frontGraphic  ? `<span><strong>Front Graphic:</strong> ${frontGraphic}</span>`   : ''}
+              ${backLocation  ? `<span><strong>Back Location:</strong> ${backLocation}</span>`   : ''}
+              ${backGraphic   ? `<span><strong>Back Graphic:</strong> ${backGraphic}</span>`     : ''}
+              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
-            <div class="cart-item-details mt-2">
-              ${cut ? `<div><strong>Cut:</strong> ${cut}</div>`      : ''}
-              ${color ? `<div><strong>Color:</strong> ${color}</div>`: ''}
-              ${size ? `<div><strong>Size:</strong> ${size}</div>`   : ''}
-              ${frontLocation ? `<div><strong>Front Location:</strong> ${frontLocation}</div>` : ''}
-              ${frontGraphic  ? `<div><strong>Front Graphic:</strong> ${frontGraphic}</div>`   : ''}
-              ${backLocation  ? `<div><strong>Back Location:</strong> ${backLocation}</div>`   : ''}
-              ${backGraphic   ? `<div><strong>Back Graphic:</strong> ${backGraphic}</div>`     : ''}
-              <div><strong>Price:</strong> ${currency.format(itemGT._price)}</div>
-            </div>
+            <button class="btn btn-sm btn-danger">X</button>
           `;
-          liGT.querySelector('.remove-btn').addEventListener('click', () => {
+          liGT.querySelector('button').addEventListener('click', () => {
             const index = cart.indexOf(itemGT);
             if (index > -1) cart.splice(index, 1);
             liGT.remove();
@@ -824,35 +699,29 @@
             updateCartTotal();
           });
           cartList.appendChild(liGT);
-          makeCollapsible(liGT);
         }
 
         if (hasHat) {
-          const itemHat = { type: 'Hat', _price: PRICE_OTHERS, frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
+          const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
-          liHat.className = 'list-group-item';
+          liHat.className = 'list-group-item d-flex justify-content-between align-items-start';
           liHat.innerHTML = `
-            <div class="cart-item-header d-flex justify-content-between align-items-center">
+            <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Hat</span>
-              <div class="d-flex align-items-center gap-2">
-                <span class="chev">▸</span>
-                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
-              </div>
+              ${colorH ? `<span><strong>Hat Color:</strong> ${colorH}</span>` : ''}
+              ${hatType ? `<span><strong>Hat Type:</strong> ${hatType}</span>` : ''}
+              <span><strong>Hat Size:</strong> ${hatStyle}</span>
+              <span><strong>Front Location:</strong> ${frontLocationH}</span>
+              <span><strong>Front Graphic:</strong> ${frontGraphicH}</span>
+              <span><strong>Back Location:</strong> ${backLocationH}</span>
+              <span><strong>Back Graphic:</strong> ${backGraphicH}</span>
+              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
-            <div class="cart-item-details mt-2">
-              ${colorH ? `<div><strong>Hat Color:</strong> ${colorH}</div>` : ''}
-              ${hatType ? `<div><strong>Hat Type:</strong> ${hatType}</div>` : ''}
-              <div><strong>Hat Size:</strong> ${hatStyle}</div>
-              <div><strong>Front Location:</strong> ${frontLocationH}</div>
-              <div><strong>Front Graphic:</strong> ${frontGraphicH}</div>
-              <div><strong>Back Location:</strong> ${backLocationH}</div>
-              <div><strong>Back Graphic:</strong> ${backGraphicH}</div>
-              <div><strong>Price:</strong> ${currency.format(itemHat._price)}</div>
-            </div>
+            <button class="btn btn-sm btn-danger">X</button>
           `;
-          liHat.querySelector('.remove-btn').addEventListener('click', () => {
+          liHat.querySelector('button').addEventListener('click', () => {
             const index = cart.indexOf(itemHat);
             if (index > -1) cart.splice(index, 1);
             liHat.remove();
@@ -860,37 +729,31 @@
             updateCartTotal();
           });
           cartList.appendChild(liHat);
-          makeCollapsible(liHat);
         }
 
         if (hasPants) {
-          const itemPants = { type: 'Pants', _price: PRICE_OTHERS, frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
+          const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
           cart.push(itemPants);
 
           const liPants = document.createElement('li');
-          liPants.className = 'list-group-item';
+          liPants.className = 'list-group-item d-flex justify-content-between align-items-start';
           liPants.innerHTML = `
-            <div class="cart-item-header d-flex justify-content-between align-items-center">
+            <div style="display:flex; flex-direction:column; gap:2px;">
               <span><strong>Item:</strong> Pants</span>
-              <div class="d-flex align-items-center gap-2">
-                <span class="chev">▸</span>
-                <button class="btn btn-sm btn-danger remove-btn" type="button">X</button>
-              </div>
+              ${pantColor ? `<span><strong>Pant Color:</strong> ${pantColor}</span>` : ''}
+              ${pantStyle ? `<span><strong>Pant Style:</strong> ${pantStyle}</span>` : ''}
+              ${pantSize ? `<span><strong>Pant Size:</strong> ${pantSize}</span>` : ''}
+              ${rearSize ? `<span><strong>Rear Size:</strong> ${rearSize}</span>` : ''}
+              ${rearGraphic ? `<span><strong>Rear Graphic:</strong> ${rearGraphic}</span>` : ''}
+              ${leftLegSize ? `<span><strong>Left Leg Size:</strong> ${leftLegSize}</span>` : ''}
+              ${leftLegGraphic ? `<span><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</span>` : ''}
+              ${rightLegSize ? `<span><strong>Right Leg Size:</strong> ${rightLegSize}</span>` : ''}
+              ${rightLegGraphic ? `<span><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</span>` : ''}
+              <span><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</span>
             </div>
-            <div class="cart-item-details mt-2">
-              ${pantColor ? `<div><strong>Pant Color:</strong> ${pantColor}</div>` : ''}
-              ${pantStyle ? `<div><strong>Pant Style:</strong> ${pantStyle}</div>` : ''}
-              ${pantSize ? `<div><strong>Pant Size:</strong> ${pantSize}</div>` : ''}
-              ${rearSize ? `<div><strong>Rear Size:</strong> ${rearSize}</div>` : ''}
-              ${rearGraphic ? `<div><strong>Rear Graphic:</strong> ${rearGraphic}</div>` : ''}
-              ${leftLegSize ? `<div><strong>Left Leg Size:</strong> ${leftLegSize}</div>` : ''}
-              ${leftLegGraphic ? `<div><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</div>` : ''}
-              ${rightLegSize ? `<div><strong>Right Leg Size:</strong> ${rightLegSize}</div>` : ''}
-              ${rightLegGraphic ? `<div><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</div>` : ''}
-              <div><strong>Price:</strong> ${currency.format(itemPants._price)}</div>
-            </div>
+            <button class="btn btn-sm btn-danger">X</button>
           `;
-          liPants.querySelector('.remove-btn').addEventListener('click', () => {
+          liPants.querySelector('button').addEventListener('click', () => {
             const index = cart.indexOf(itemPants);
             if (index > -1) cart.splice(index, 1);
             liPants.remove();
@@ -898,17 +761,14 @@
             updateCartTotal();
           });
           cartList.appendChild(liPants);
-          makeCollapsible(liPants);
         }
 
         updateCartTotal();
       });
 
-      /* ================================
-         PAYMENT-GATED FINALIZATION
-         ================================ */
+      document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-      async function placeOrder(paymentDetails) {
         const name = document.getElementById('name').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const email = document.getElementById('email').value.trim();
@@ -921,7 +781,7 @@
         }
 
         for (const item of cart) {
-          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic, _price } = item;
+          const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
             front_location: frontLocation || null,
@@ -947,7 +807,7 @@
             leftleg_graphic: leftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
-            price: _price
+            price: ITEM_PRICE
           }]);
         }
 
@@ -978,12 +838,12 @@
               ${it.leftLegGraphic ? `Left Leg Graphic: ${it.leftLegGraphic}<br>` : ''}
               ${it.rightLegSize ? `Right Leg Size: ${it.rightLegSize}<br>` : ''}
               ${it.rightLegGraphic ? `Right Leg Graphic: ${it.rightLegGraphic}<br>` : ''}
-              Price: ${currency.format(it._price)}
+              Price: ${currency.format(ITEM_PRICE)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
         </ul>`;
 
-        const grand_total = currency.format(calcCartTotal(cart));
+        const grand_total = currency.format(cart.length * ITEM_PRICE);
         const params = { name, phone, email, address, city, items, grand_total };
 
         emailjs.send("service_9fvjwls", "template_gveha9l", params);
@@ -997,18 +857,15 @@
         cartListEl.innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
         updateCartTotal();
+        e.target.reset();
 
-        document.getElementById('bookingForm').reset();
         clearGraphicsSelections();
         clearHatSelections();
         clearPantsSelections();
         document.getElementById('graphicsSection').style.display = 'none';
         document.getElementById('hatSection').style.display = 'none';
         document.getElementById('pantsSection').style.display = 'none';
-      }
-
-      // Initial render of payment buttons
-      renderPayPalButtons();
+      });
     });
   </script>
 </body>
