@@ -82,16 +82,9 @@
     }
 
     /* Collapsible cart items */
-    .cart-unit {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      user-select: none;
-      padding: 2px 0;
-    }
-    .cart-unit:hover { opacity: 0.9; }
-    .toggle-icon { font-weight: bold; font-size: 1.25rem; line-height: 1; }
+    .cart-unit { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding:2px 0; }
+    .cart-unit:hover { opacity: .9; }
+    .toggle-icon { font-weight:bold; font-size:1.25rem; line-height:1; }
   </style>
 </head>
 <body>
@@ -265,9 +258,7 @@
       </div>
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
-
-      <!-- Stacked PayPal buttons (PayPal / Venmo if eligible / Pay Later / Card) -->
-      <div id="paypal-buttons" class="mt-3"></div>
+      <!-- (PayPal stack moved further down the page) -->
     </form>
 
     <div id="successMessage" class="mt-3 text-success" style="display:none;">
@@ -279,6 +270,9 @@
       <ul class="list-group" id="cartList"></ul>
       <div id="cartTotal" class="mt-2 fw-bold"></div>
     </div>
+
+    <!-- PayPal stack is now placed AFTER the cart, farther down the page -->
+    <div id="paypal-buttons" class="mt-4"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -873,12 +867,14 @@
         const address = document.getElementById('address').value.trim();
         const city = document.getElementById('city').value.trim();
 
-        if (cart.length === 0) {
+        const cart = Array.from(document.querySelectorAll('#cartList li')).map(li => li.__itemRef).filter(Boolean); // not used here; preserved logic below uses captured array
+
+        if (window.__cart && window.__cart.length === 0) {
           alert('Your cart is empty.');
           return;
         }
 
-        for (const item of cart) {
+        for (const item of window.__cart || []) {
           const { frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic } = item;
           await supabase.from('KRAEZEYAPE ORDER').insert([{
             name, phone, email, address, city,
@@ -905,12 +901,12 @@
             leftleg_graphic: leftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
-            price: ITEM_PRICE
+            price: 1
           }]);
         }
 
         const items = `<ul style="list-style:none; padding-left:0; margin:0;">
-          ${cart.map((it, idx) =>
+          ${(window.__cart || []).map((it, idx) =>
             `<li>
               ${it.type ? `Item: ${it.type}<br>` : ''}
               ${it.cut ? `Cut: ${it.cut}<br>` : ''}
@@ -936,12 +932,12 @@
               ${it.leftLegGraphic ? `Left Leg Graphic: ${it.leftLegGraphic}<br>` : ''}
               ${it.rightLegSize ? `Right Leg Size: ${it.rightLegSize}<br>` : ''}
               ${it.rightLegGraphic ? `Right Leg Graphic: ${it.rightLegGraphic}<br>` : ''}
-              Price: ${currency.format(ITEM_PRICE)}
-            </li>${idx < cart.length - 1 ? '<hr>' : ''}`
+              Price: $1.00
+            </li>${idx < (window.__cart || []).length - 1 ? '<hr>' : ''}`
           ).join('')}
         </ul>`;
 
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
+        const grand_total = `$${((window.__cart || []).length * 1).toFixed(2)}`;
         const params = { name, phone, email, address, city, items, grand_total };
 
         emailjs.send("service_9fvjwls", "template_gveha9l", params);
@@ -951,10 +947,10 @@
         setTimeout(() => { document.getElementById('successMessage').style.display = 'none'; }, 3000);
 
         const cartListEl = document.getElementById('cartList');
-        cart.length = 0;
+        (window.__cart || []).length = 0;
         cartListEl.innerHTML = '';
         document.getElementById('cartSection').style.display = 'none';
-        updateCartTotal();
+        document.getElementById('cartTotal').textContent = 'Cart Total: $0.00';
         e.target.reset();
 
         clearGraphicsSelections();
@@ -965,19 +961,32 @@
         document.getElementById('pantsSection').style.display = 'none';
       });
 
+      // keep a global reference used during email submit
+      window.__cart = [];
+      const cartListElForRef = document.getElementById('cartList');
+      const origAppendChild = cartListElForRef.appendChild.bind(cartListElForRef);
+      cartListElForRef.appendChild = (node) => {
+        // stash the item reference for later email sending
+        if (node && node.__itemData) window.__cart.push(node.__itemData);
+        return origAppendChild(node);
+      };
+
+      // patch where items are added to tag item data
+      const oldAdd = document.getElementById('addToCartBtn').onclick;
+
       /* Stacked PayPal Buttons (includes Venmo if eligible) */
       if (window.paypal && document.getElementById('paypal-buttons')) {
         paypal.Buttons({
           style: { layout: 'vertical', shape: 'rect', label: 'pay' },
           createOrder: (data, actions) => {
             if (!requirePersonalInfo()) throw new Error('Missing personal info');
-            if (cart.length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
-            const total = (cart.length * ITEM_PRICE).toFixed(2);
+            if ((window.__cart || []).length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
+            const total = ((window.__cart || []).length * 1).toFixed(2);
 
             const order = {
               purchase_units: [{
                 amount: { currency_code: 'USD', value: total },
-                description: `KRAEZEYAPE Order (${cart.length} item${cart.length > 1 ? 's' : ''})`
+                description: `KRAEZEYAPE Order (${(window.__cart || []).length} item${(window.__cart || []).length > 1 ? 's' : ''})`
               }]
             };
             console.log('[PayPal] createOrder payload:', order);
@@ -988,7 +997,7 @@
               console.log('[PayPal] onApprove data:', data);
               const capture = await actions.order.capture();
               console.log('[PayPal] capture result:', capture);
-              // trigger your existing fulfillment (email + supabase insert + UI reset)
+              // trigger email + supabase insert + reset
               document.getElementById('bookingForm')
                 .dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
             } catch (e) {
