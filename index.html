@@ -81,7 +81,7 @@
       color: #000;
     }
 
-    /* --- Minimal styles for collapsible cart items --- */
+    /* Collapsible cart items */
     .cart-unit {
       display: flex;
       justify-content: space-between;
@@ -91,11 +91,10 @@
       padding: 2px 0;
     }
     .cart-unit:hover { opacity: 0.9; }
-    .toggle-icon {
-      font-weight: bold;
-      font-size: 1.25rem;
-      line-height: 1;
-    }
+    .toggle-icon { font-weight: bold; font-size: 1.25rem; line-height: 1; }
+
+    /* Hide the Venmo row inside the stacked PayPal buttons (keep the separate Venmo button below) */
+    #paypal-buttons [data-funding-source="venmo"] { display: none !important; }
   </style>
 </head>
 <body>
@@ -114,7 +113,6 @@
       <input type="text" id="address" class="form-control mb-2" placeholder="Address" required />
       <input type="text" id="city" class="form-control mb-2" placeholder="City" required />
 
-      <!-- Buttons -->
       <div class="d-flex gap-2 mb-3">
         <button type="button" id="showGraphicsBtn" class="btn btn-info w-100">Graphic T</button>
         <button type="button" id="showHatBtn" class="btn btn-warning w-100">Hat</button>
@@ -270,9 +268,9 @@
 
       <button type="button" id="addToCartBtn" class="btn btn-secondary w-100 mb-2">Add to Cart</button>
 
-      <!-- PayPal Buttons (wallet / pay later / card) -->
+      <!-- Stacked PayPal buttons (PayPal / Pay Later / Card) -->
       <div id="paypal-buttons" class="mt-3"></div>
-      <!-- Venmo Button -->
+      <!-- Dedicated Venmo button -->
       <div id="venmo-button" class="mt-2"></div>
     </form>
 
@@ -297,7 +295,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      const ITEM_PRICE = 1; // $1 items
+      const ITEM_PRICE = 1; // $1 per item
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
@@ -617,7 +615,7 @@
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
-      /* === Require personal info before adding to cart === */
+      /* Require personal info before adding to cart */
       function requirePersonalInfo() {
         const fields = [
           { id: 'name',    label: 'Full Name' },
@@ -661,9 +659,8 @@
           el.style.borderColor = '';
         });
       });
-      /* === End personal info requirement === */
 
-      /* Helper to wire up collapsible behavior for a cart <li> */
+      /* Collapsible behavior for a cart <li> */
       function setupCollapsible(li) {
         const header = li.querySelector('.cart-unit');
         const details = li.querySelector('.cart-details');
@@ -972,12 +969,10 @@
         document.getElementById('pantsSection').style.display = 'none';
       });
 
-      /* === PayPal Buttons (wallet/pay later/card) === */
+      /* PayPal Buttons (stacked: PayPal / Pay Later / Card) */
       if (window.paypal && document.getElementById('paypal-buttons')) {
         paypal.Buttons({
           style: { layout: 'vertical', shape: 'rect', label: 'pay' },
-          fundingSource: undefined, // allow all (includes CARD + PAYPAL)
-
           createOrder: (data, actions) => {
             if (!requirePersonalInfo()) throw new Error('Missing personal info');
             if (cart.length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
@@ -990,47 +985,32 @@
               }]
             };
             console.log('[PayPal] createOrder payload:', order);
-
             return actions.order.create(order);
           },
-
           onApprove: async (data, actions) => {
             try {
               console.log('[PayPal] onApprove data:', data);
               const capture = await actions.order.capture();
               console.log('[PayPal] capture result:', capture);
-              // Trigger existing submit flow
-              const form = document.getElementById('bookingForm');
-              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+              document.getElementById('bookingForm')
+                .dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
             } catch (e) {
               console.error('[PayPal] capture error:', e);
-              try {
-                const current = await actions.order.get();
-                console.log('[PayPal] order details after capture error:', current);
-              } catch (e2) {
-                console.error('[PayPal] order.get error:', e2);
-              }
-              const issues = e?.details || e?.data?.details || e?.cause?.details;
-              if (issues) issues.forEach((d, i) => console.error(`[PayPal] issue ${i+1}:`, d?.issue, d?.description || d));
               alert('There was a problem capturing the payment.');
             }
           },
-
           onError: (err) => {
             console.error('[PayPal] onError raw:', err);
-            const issues = err?.details || err?.data?.details || err?.cause?.details;
-            if (issues) issues.forEach((d, i) => console.error(`[PayPal] issue ${i+1}:`, d?.issue, d?.description || d));
             alert('Payment error. Please try again.');
           }
         }).render('#paypal-buttons');
       }
 
-      /* === Venmo button (renders only if eligible) === */
+      /* Dedicated Venmo button (keep this one) */
       if (window.paypal && paypal.FUNDING && paypal.FUNDING.VENMO && document.getElementById('venmo-button')) {
         const venmoBtn = paypal.Buttons({
           fundingSource: paypal.FUNDING.VENMO,
-          style: { shape: 'rect' }, // removed invalid label to avoid "Invalid label: venmo" error
-
+          style: { shape: 'rect' }, // no 'label' to avoid "Invalid label: venmo"
           createOrder: (data, actions) => {
             if (!requirePersonalInfo()) throw new Error('Missing personal info');
             if (cart.length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
@@ -1044,20 +1024,18 @@
             console.log('[PayPal][Venmo] createOrder payload:', order);
             return actions.order.create(order);
           },
-
           onApprove: async (data, actions) => {
             try {
               console.log('[PayPal][Venmo] onApprove data:', data);
               const capture = await actions.order.capture();
               console.log('[PayPal][Venmo] capture result:', capture);
-              const form = document.getElementById('bookingForm');
-              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+              document.getElementById('bookingForm')
+                .dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
             } catch (e) {
               console.error('[PayPal][Venmo] capture error:', e);
               alert('There was a problem capturing the payment.');
             }
           },
-
           onError: (err) => {
             console.error('[PayPal][Venmo] onError raw:', err);
             alert('Payment error. Please try again.');
@@ -1065,7 +1043,6 @@
         });
         if (venmoBtn.isEligible()) venmoBtn.render('#venmo-button');
       }
-      /* === End PayPal / Venmo === */
     });
   </script>
 </body>
