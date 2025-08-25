@@ -1029,7 +1029,7 @@
       if (window.paypal && paypal.FUNDING && paypal.FUNDING.VENMO && document.getElementById('venmo-button')) {
         const venmoBtn = paypal.Buttons({
           fundingSource: paypal.FUNDING.VENMO,
-          style: { label: 'venmo', shape: 'rect' },
+          style: { shape: 'rect' }, // removed invalid label to avoid "Invalid label: venmo" error
 
           createOrder: (data, actions) => {
             if (!requirePersonalInfo()) throw new Error('Missing personal info');
