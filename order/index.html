@@ -639,10 +639,26 @@
         // Capture phase ensures the dynamic selection is closed before existing legacy handlers run.
         document.getElementById(id).addEventListener('click', hideDynamicProduct, true);
       });
+      function showCatalogMessage(message){
+        let note=document.getElementById('catalogLoadMessage');
+        if(!note){note=document.createElement('div');note.id='catalogLoadMessage';note.className='alert alert-warning py-2 small mb-2';document.getElementById('mainProductButtons').after(note);}
+        note.textContent=message;
+      }
       async function loadDynamicProducts(){
-        const {data:products,error}=await supabase.from('store_products').select('*').eq('active',true).order('sort_order');
-        if(error){console.warn('Product catalog unavailable:',error.message);return}
-        if(!products?.length)return;
+        // Load the active catalog independently of the legacy apparel option loaders.
+        // If it fails, display the reason instead of silently hiding the new products.
+        const {data:products,error}=await supabase.from('store_products').select('*').eq('active',true);
+        if(error){
+          console.error('Product catalog unavailable:',error);
+          showCatalogMessage('Additional products could not load: '+error.message);
+          return;
+        }
+        if(!products?.length){
+          console.warn('No active products were returned from store_products. Check active flag and public SELECT permissions.');
+          showCatalogMessage('No additional active products were returned. Check the Product Manager visibility setting.');
+          return;
+        }
+        products.sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0));
         const list=document.getElementById('mainProductButtons');const panel=dynamicPanel;
         for(const product of products){const button=document.createElement('button');button.type='button';button.className='btn dynamic-product-btn';button.textContent=product.name;button.title=currency.format(product.price);button.onclick=async()=>{
           document.getElementById('graphicsSection').style.display='none';
