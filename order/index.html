@@ -99,7 +99,7 @@
     <h2 class="mb-3">KRAEZEYAPE ORDER FORM</h2>
     <p>Select your Item, Graphic, and Location.</p>
 
-    <form id="bookingForm">
+    <form id="bookingForm"><div id="dynamicProducts" class="card p-3 mb-3" style="display:none"><h3>More products</h3><div id="dynamicProductList"></div><div id="dynamicProductOptions" class="mt-3"></div></div>
       <input type="text" id="name" class="form-control mb-2" placeholder="Full Name" required />
       <input type="tel" id="phone" class="form-control mb-2" placeholder="Phone Number" required />
       <input type="email" id="email" class="form-control mb-2" placeholder="Email Address" required />
@@ -287,7 +287,20 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      const ITEM_PRICE = 1; // $1 per item
+      // Prices are controlled in the owner dashboard. Default is used only if price lookup fails.
+      const itemPrices = { 'Graphic T': 1, 'Hat': 1, 'Pants': 1 };
+      let pricesLoaded = false;
+      async function loadItemPrices() {
+        const {data,error}=await supabase.from('item_prices').select('item_type,price');
+        if(error || !data || data.length !== 3) throw new Error('Unable to load current prices. Please refresh and try again.');
+        for(const type of Object.keys(itemPrices)) {
+          const row=data.find(x=>x.item_type===type);
+          if(!row || !(Number(row.price)>0)) throw new Error('Missing price for '+type);
+          itemPrices[type]=Number(row.price);
+        }
+        pricesLoaded=true;
+      }
+      const cartTotal = () => Math.round(cart.reduce((sum,item)=>sum+Math.round(item.price*100),0))/100;
       const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
       const supabaseUrl = 'https://fcwwaygjdiopbiqsujys.supabase.co';
@@ -601,9 +614,36 @@
       updateHatColorSource();
 
       const cart = [];
+      try { await loadItemPrices(); } catch(e) { console.error(e); alert(e.message); }
+
+
+      // Additional independent products and choices. Existing Graphic T, Hat and Pants remain unchanged.
+      async function loadDynamicProducts(){
+        const {data:products,error}=await supabase.from('store_products').select('*').eq('active',true).order('sort_order');
+        if(error){console.warn('Product catalog unavailable:',error.message);return}
+        if(!products?.length)return;
+        const wrapper=document.getElementById('dynamicProducts');wrapper.style.display='block';
+        const list=document.getElementById('dynamicProductList');const panel=document.getElementById('dynamicProductOptions');
+        for(const product of products){const button=document.createElement('button');button.type='button';button.className='btn btn-outline-light m-1';button.textContent=product.name+' · '+currency.format(product.price);button.onclick=async()=>{
+          panel.replaceChildren();const heading=document.createElement('h4');heading.textContent=product.name;panel.append(heading);
+          if(product.image_url){const img=document.createElement('img');img.src=product.image_url;img.alt=product.name;img.style.cssText='max-width:180px;max-height:180px;object-fit:contain';panel.append(img)}
+          const {data:groups,error:gErr}=await supabase.from('store_option_groups').select('*').eq('product_id',product.id).eq('active',true).order('sort_order');if(gErr){alert(gErr.message);return}
+          const selections=[];
+          for(const group of groups){const {data:choices,error:cErr}=await supabase.from('store_option_choices').select('*').eq('group_id',group.id).eq('active',true).order('sort_order');if(cErr){alert(cErr.message);return}
+            const label=document.createElement('label');label.className='d-block my-2';label.textContent=group.name+(group.required?' *':'');const select=document.createElement('select');select.className='form-select';const blank=new Option(group.required?'Select an option':'None','');select.add(blank);for(const choice of choices)select.add(new Option(choice.name+(Number(choice.price_delta)?' ('+currency.format(choice.price_delta)+')':''),choice.id));label.append(select);panel.append(label);selections.push({group,choices,select});}
+          const add=document.createElement('button');add.type='button';add.className='btn btn-success mt-2';add.textContent='Add '+product.name+' to cart';add.onclick=()=>{
+            if(!requirePersonalInfo())return;
+            const options={};let price=Number(product.price);
+            for(const {group,choices,select} of selections){const choice=choices.find(c=>c.id===select.value);if(group.required&&!choice){alert('Please select '+group.name);return}if(choice){options[group.name]=choice.name;price+=Number(choice.price_delta)||0}}
+            if(price<=0){alert('Invalid product price');return}
+            const item={type:product.name,productId:product.id,productOptions:options,price:Math.round(price*100)/100};cart.push(item);
+            const li=document.createElement('li');li.className='list-group-item d-flex justify-content-between align-items-start';const desc=document.createElement('div');desc.textContent=product.name+' · '+Object.entries(options).map(([k,v])=>k+': '+v).join(', ')+' · '+currency.format(item.price);const remove=document.createElement('button');remove.type='button';remove.className='btn btn-sm btn-danger ms-2';remove.textContent='X';remove.onclick=()=>{cart.splice(cart.indexOf(item),1);li.remove();updateCartTotal();if(!cart.length)document.getElementById('cartSection').style.display='none'};li.append(desc,remove);document.getElementById('cartList').append(li);document.getElementById('cartSection').style.display='block';updateCartTotal();panel.replaceChildren();};panel.append(add);
+        };list.append(button)}
+      }
+      await loadDynamicProducts();
 
       function updateCartTotal() {
-        const total = cart.length * ITEM_PRICE;
+        const total = cartTotal();
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
       }
 
@@ -671,6 +711,7 @@
 
       document.getElementById('addToCartBtn').addEventListener('click', () => {
         if (!requirePersonalInfo()) return;
+        if(!pricesLoaded){alert('Prices could not be loaded. Please refresh the page.');return;}
 
         const frontLocation = document.getElementById('frontLocation').value;
         const frontGraphic  = document.getElementById('frontGraphic').value;
@@ -749,6 +790,7 @@
 
         if (hasGraphicT) {
           const itemGT = { type: 'Graphic T', frontLocation, frontGraphic, backLocation, backGraphic, size, color, cut, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
+          itemGT.price = itemPrices['Graphic T'];
           cart.push(itemGT);
 
           const liGT = document.createElement('li');
@@ -767,7 +809,7 @@
                 ${frontGraphic  ? `<div><strong>Front Graphic:</strong> ${frontGraphic}</div>`   : ''}
                 ${backLocation  ? `<div><strong>Back Location:</strong> ${backLocation}</div>`   : ''}
                 ${backGraphic   ? `<div><strong>Back Graphic:</strong> ${backGraphic}</div>`     : ''}
-                <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+                <div><strong>Price:</strong> ${currency.format(itemGT.price)}</div>
               </div>
             </div>
             <button class="btn btn-sm btn-danger ms-2">X</button>
@@ -785,6 +827,7 @@
 
         if (hasHat) {
           const itemHat = { type: 'Hat', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle, hatType, colorH, frontLocationH, frontGraphicH, backLocationH, backGraphicH, pantColor: null, pantStyle: null, pantSize: null, rearSize: null, rearGraphic: null, leftLegSize: null, leftLegGraphic: null, rightLegSize: null, rightLegGraphic: null };
+          itemHat.price = itemPrices['Hat'];
           cart.push(itemHat);
 
           const liHat = document.createElement('li');
@@ -803,7 +846,7 @@
                 <div><strong>Front Graphic:</strong> ${frontGraphicH}</div>
                 <div><strong>Back Location:</strong> ${backLocationH}</div>
                 <div><strong>Back Graphic:</strong> ${backGraphicH}</div>
-                <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+                <div><strong>Price:</strong> ${currency.format(itemHat.price)}</div>
               </div>
             </div>
             <button class="btn btn-sm btn-danger ms-2">X</button>
@@ -821,6 +864,7 @@
 
         if (hasPants) {
           const itemPants = { type: 'Pants', frontLocation: null, frontGraphic: null, backLocation: null, backGraphic: null, size: null, color: null, cut: null, hatStyle: null, hatType: null, colorH: null, frontLocationH: null, frontGraphicH: null, backLocationH: null, backGraphicH: null, pantColor, pantStyle, pantSize, rearSize, rearGraphic, leftLegSize, leftLegGraphic, rightLegSize, rightLegGraphic };
+          itemPants.price = itemPrices['Pants'];
           cart.push(itemPants);
 
           const liPants = document.createElement('li');
@@ -841,7 +885,7 @@
                 ${leftLegGraphic ? `<div><strong>Left Leg Graphic:</strong> ${leftLegGraphic}</div>` : ''}
                 ${rightLegSize ? `<div><strong>Right Leg Size:</strong> ${rightLegSize}</div>` : ''}
                 ${rightLegGraphic ? `<div><strong>Right Leg Graphic:</strong> ${rightLegGraphic}</div>` : ''}
-                <div><strong>Price:</strong> ${currency.format(ITEM_PRICE)}</div>
+                <div><strong>Price:</strong> ${currency.format(itemPants.price)}</div>
               </div>
             </div>
             <button class="btn btn-sm btn-danger ms-2">X</button>
@@ -901,7 +945,10 @@
             leftleg_graphic: leftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
-            price: 1
+            price: item.price,
+            product_name: item.type || null,
+            product_id: item.productId || null,
+            product_options: item.productOptions || {}
           }]);
         }
 
@@ -909,6 +956,7 @@
           ${cart.map((it, idx) =>
             `<li>
               ${it.type ? `Item: ${it.type}<br>` : ''}
+              ${it.productOptions ? Object.entries(it.productOptions).map(([k,v])=>`${k}: ${v}<br>`).join('') : ''}
               ${it.cut ? `Cut: ${it.cut}<br>` : ''}
               ${it.color ? `Color: ${it.color}<br>` : ''}
               ${it.size ? `Size: ${it.size}<br>` : ''}
@@ -932,12 +980,12 @@
               ${it.leftLegGraphic ? `Left Leg Graphic: ${it.leftLegGraphic}<br>` : ''}
               ${it.rightLegSize ? `Right Leg Size: ${it.rightLegSize}<br>` : ''}
               ${it.rightLegGraphic ? `Right Leg Graphic: ${it.rightLegGraphic}<br>` : ''}
-              Price: $1.00
+              Price: ${currency.format(it.price)}
             </li>${idx < cart.length - 1 ? '<hr>' : ''}`
           ).join('')}
         </ul>`;
 
-        const grand_total = currency.format(cart.length * ITEM_PRICE);
+        const grand_total = currency.format(cartTotal());
         const params = { name, phone, email, address, city, items, grand_total };
 
         emailjs.send("service_9fvjwls", "template_gveha9l", params);
@@ -969,7 +1017,8 @@
             if (!requirePersonalInfo()) throw new Error('Missing personal info');
             if (document.getElementById('cartList').children.length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
 
-            const total = (document.getElementById('cartList').children.length * 1).toFixed(2);
+            if(!pricesLoaded) throw new Error('Prices not loaded');
+            const total = cartTotal().toFixed(2);
             const order = {
               purchase_units: [{
                 amount: { currency_code: 'USD', value: total },
