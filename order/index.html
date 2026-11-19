@@ -88,6 +88,14 @@
 
     /* Space the PayPal stack further down the page */
     .paypal-stack { margin-top: 48px; position: relative; z-index: 1; }
+    /* All product buttons share one responsive group. */
+    #mainProductButtons { flex-wrap: wrap; }
+    #mainProductButtons > button { flex: 1 1 30%; width: auto !important; min-width: 100px; color: #000; }
+    #mainProductButtons > button.dynamic-product-btn { background: #b8f3c2; border: 0; color: #000; }
+    #mainProductButtons > button.dynamic-product-btn:hover { background: #92e9a4; }
+    #mainProductButtons > button.dynamic-product-btn.selected { outline: 3px solid #188c39; outline-offset: -3px; }
+    #dynamicProductOptions { text-align: left; }
+    @media (max-width: 420px) { #mainProductButtons > button { flex-basis: 44%; } }
   </style>
 </head>
 <body>
@@ -107,11 +115,12 @@
       <input type="text" id="city" class="form-control mb-2" placeholder="City" required />
 
       <!-- Buttons -->
-      <div class="d-flex gap-2 mb-3">
+      <div class="d-flex gap-2 mb-3" id="mainProductButtons">
         <button type="button" id="showGraphicsBtn" class="btn btn-info w-100">Graphic T</button>
         <button type="button" id="showHatBtn" class="btn btn-warning w-100">Hat</button>
         <button type="button" id="showPantsBtn" class="btn btn-success w-100">Pants</button>
       </div>
+      <div id="dynamicProductOptions" class="mb-3" style="display:none"></div>
 
       <!-- Graphic T Section -->
       <div id="graphicsSection" style="display:none;">
@@ -616,6 +625,51 @@
       const cart = [];
       try { await loadItemPrices(); } catch(e) { console.error(e); alert(e.message); }
 
+
+      // Additional independent products share the original product button group.
+      const dynamicPanel = document.getElementById('dynamicProductOptions');
+      const legacyAddButton = document.getElementById('addToCartBtn');
+      function hideDynamicProduct() {
+        dynamicPanel.replaceChildren();
+        dynamicPanel.style.display = 'none';
+        document.querySelectorAll('.dynamic-product-btn').forEach(b => b.classList.remove('selected'));
+        legacyAddButton.style.display = '';
+      }
+      ['showGraphicsBtn','showHatBtn','showPantsBtn'].forEach(id => {
+        // Capture phase ensures the dynamic selection is closed before existing legacy handlers run.
+        document.getElementById(id).addEventListener('click', hideDynamicProduct, true);
+      });
+      async function loadDynamicProducts(){
+        const {data:products,error}=await supabase.from('store_products').select('*').eq('active',true).order('sort_order');
+        if(error){console.warn('Product catalog unavailable:',error.message);return}
+        if(!products?.length)return;
+        const list=document.getElementById('mainProductButtons');const panel=dynamicPanel;
+        for(const product of products){const button=document.createElement('button');button.type='button';button.className='btn dynamic-product-btn';button.textContent=product.name;button.title=currency.format(product.price);button.onclick=async()=>{
+          document.getElementById('graphicsSection').style.display='none';
+          document.getElementById('hatSection').style.display='none';
+          document.getElementById('pantsSection').style.display='none';
+          clearGraphicsSelections();clearHatSelections();clearPantsSelections();
+          hideDynamicProduct();
+          button.classList.add('selected');
+          panel.style.display='block';
+          legacyAddButton.style.display='none';
+          panel.replaceChildren();const heading=document.createElement('h4');heading.textContent=product.name;panel.append(heading);
+          if(product.image_url){const img=document.createElement('img');img.src=product.image_url;img.alt=product.name;img.style.cssText='max-width:180px;max-height:180px;object-fit:contain';panel.append(img)}
+          const {data:groups,error:gErr}=await supabase.from('store_option_groups').select('*').eq('product_id',product.id).eq('active',true).order('sort_order');if(gErr){alert(gErr.message);return}
+          const selections=[];
+          for(const group of groups){const {data:choices,error:cErr}=await supabase.from('store_option_choices').select('*').eq('group_id',group.id).eq('active',true).order('sort_order');if(cErr){alert(cErr.message);return}
+            const label=document.createElement('label');label.className='d-block my-2';label.textContent=group.name+(group.required?' *':'');const select=document.createElement('select');select.className='form-select';const blank=new Option(group.required?'Select an option':'None','');select.add(blank);for(const choice of choices)select.add(new Option(choice.name+(Number(choice.price_delta)?' ('+currency.format(choice.price_delta)+')':''),choice.id));label.append(select);panel.append(label);selections.push({group,choices,select});}
+          const add=document.createElement('button');add.type='button';add.className='btn btn-success mt-2';add.textContent='Add '+product.name+' to cart';add.onclick=()=>{
+            if(!requirePersonalInfo())return;
+            const options={};let price=Number(product.price);
+            for(const {group,choices,select} of selections){const choice=choices.find(c=>c.id===select.value);if(group.required&&!choice){alert('Please select '+group.name);return}if(choice){options[group.name]=choice.name;price+=Number(choice.price_delta)||0}}
+            if(price<=0){alert('Invalid product price');return}
+            const item={type:product.name,productId:product.id,productOptions:options,price:Math.round(price*100)/100};cart.push(item);
+            const li=document.createElement('li');li.className='list-group-item d-flex justify-content-between align-items-start';const desc=document.createElement('div');desc.textContent=product.name+' · '+Object.entries(options).map(([k,v])=>k+': '+v).join(', ')+' · '+currency.format(item.price);const remove=document.createElement('button');remove.type='button';remove.className='btn btn-sm btn-danger ms-2';remove.textContent='X';remove.onclick=()=>{cart.splice(cart.indexOf(item),1);li.remove();updateCartTotal();if(!cart.length)document.getElementById('cartSection').style.display='none'};li.append(desc,remove);document.getElementById('cartList').append(li);document.getElementById('cartSection').style.display='block';updateCartTotal();panel.replaceChildren();panel.style.display='none';button.classList.remove('selected');};panel.append(add);
+        };list.append(button)}
+      }
+      await loadDynamicProducts();
+
       function updateCartTotal() {
         const total = cartTotal();
         document.getElementById('cartTotal').textContent = `Cart Total: ${currency.format(total)}`;
@@ -919,7 +973,10 @@
             leftleg_graphic: leftLegGraphic || null,
             rightleg_size: rightLegSize || null,
             rightleg_graphic: rightLegGraphic || null,
-            price: item.price
+            price: item.price,
+            product_name: item.type || null,
+            product_id: item.productId || null,
+            product_options: item.productOptions || {}
           }]);
         }
 
@@ -927,6 +984,7 @@
           ${cart.map((it, idx) =>
             `<li>
               ${it.type ? `Item: ${it.type}<br>` : ''}
+              ${it.productOptions ? Object.entries(it.productOptions).map(([k,v])=>`${k}: ${v}<br>`).join('') : ''}
               ${it.cut ? `Cut: ${it.cut}<br>` : ''}
               ${it.color ? `Color: ${it.color}<br>` : ''}
               ${it.size ? `Size: ${it.size}<br>` : ''}
@@ -974,6 +1032,7 @@
         clearGraphicsSelections();
         clearHatSelections();
         clearPantsSelections();
+        hideDynamicProduct();
         document.getElementById('graphicsSection').style.display = 'none';
         document.getElementById('hatSection').style.display = 'none';
         document.getElementById('pantsSection').style.display = 'none';
