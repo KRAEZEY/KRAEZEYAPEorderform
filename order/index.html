@@ -626,63 +626,145 @@
       try { await loadItemPrices(); } catch(e) { console.error(e); alert(e.message); }
 
 
-      // Additional independent products share the original product button group.
+      // Unified Product Manager: active catalog items replace matching legacy buttons.
+      // Preview with ?catalog_preview=1 on the DEVELOPMENT deployment only.
+      // Preview does not allow adding to cart or paying.
+      const catalogPreview = new URLSearchParams(location.search).get('catalog_preview') === '1';
       const dynamicPanel = document.getElementById('dynamicProductOptions');
       const legacyAddButton = document.getElementById('addToCartBtn');
+      const legacyButtons = {
+        'graphic t': document.getElementById('showGraphicsBtn'),
+        'hat': document.getElementById('showHatBtn'),
+        'pants': document.getElementById('showPantsBtn')
+      };
+      let catalogRequestToken = 0;
       function hideDynamicProduct() {
+        ++catalogRequestToken;
         dynamicPanel.replaceChildren();
         dynamicPanel.style.display = 'none';
         document.querySelectorAll('.dynamic-product-btn').forEach(b => b.classList.remove('selected'));
         legacyAddButton.style.display = '';
       }
-      ['showGraphicsBtn','showHatBtn','showPantsBtn'].forEach(id => {
-        // Capture phase ensures the dynamic selection is closed before existing legacy handlers run.
-        document.getElementById(id).addEventListener('click', hideDynamicProduct, true);
+      Object.values(legacyButtons).forEach(button => {
+        button.addEventListener('click', hideDynamicProduct, true);
       });
-      function showCatalogMessage(message){
-        let note=document.getElementById('catalogLoadMessage');
-        if(!note){note=document.createElement('div');note.id='catalogLoadMessage';note.className='alert alert-warning py-2 small mb-2';document.getElementById('mainProductButtons').after(note);}
-        note.textContent=message;
+      function catalogWarning(message) {
+        let note = document.getElementById('catalogNotice');
+        if (!note) {
+          note = document.createElement('div');
+          note.id = 'catalogNotice';
+          note.className = 'alert alert-warning py-2 small';
+          document.getElementById('mainProductButtons').after(note);
+        }
+        note.textContent = message;
       }
-      async function loadDynamicProducts(){
-        // Load the active catalog independently of the legacy apparel option loaders.
-        // If it fails, display the reason instead of silently hiding the new products.
-        const {data:products,error}=await supabase.from('store_products').select('*').eq('active',true);
-        if(error){
-          console.error('Product catalog unavailable:',error);
-          showCatalogMessage('Additional products could not load: '+error.message);
-          return;
+      async function loadDynamicProducts() {
+        const { data: products, error } = await supabase.from('store_products')
+          .select('*').order('sort_order', { ascending: true });
+        if (error) { console.error('Product catalog unavailable', error); catalogWarning('Additional products could not load: ' + error.message); return; }
+        const visible = (products || []).filter(p => p.active || (catalogPreview && ['graphic t','hat','pants'].includes(String(p.name).trim().toLowerCase())));
+        if (catalogPreview) catalogWarning('CATALOG PREVIEW — Hidden migrated products are shown for testing. Checkout is disabled.');
+        const list = document.getElementById('mainProductButtons');
+        for (const product of visible) {
+          const normalized = String(product.name).trim().toLowerCase();
+          const oldButton = legacyButtons[normalized];
+          // Do not show two buttons for the same product.
+          if (oldButton) oldButton.style.display = 'none';
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn dynamic-product-btn';
+          button.textContent = product.name;
+          button.title = currency.format(Number(product.price) || 0);
+          button.addEventListener('click', async () => {
+            hideDynamicProduct();
+            ['graphicsSection','hatSection','pantsSection'].forEach(id => document.getElementById(id).style.display = 'none');
+            clearGraphicsSelections(); clearHatSelections(); clearPantsSelections();
+            button.classList.add('selected');
+            dynamicPanel.style.display = 'block';
+            legacyAddButton.style.display = 'none';
+            const token = ++catalogRequestToken;
+            const heading = document.createElement('h4');
+            heading.textContent = product.name;
+            dynamicPanel.append(heading);
+            if (product.image_url) {
+              const img = document.createElement('img');
+              img.src = product.image_url;
+              img.alt = product.name;
+              img.style.cssText = 'max-width:180px;max-height:180px;object-fit:contain';
+              dynamicPanel.append(img);
+            }
+            const { data: groups, error: gErr } = await supabase.from('store_option_groups')
+              .select('*').eq('product_id', product.id).eq('active', true).order('sort_order');
+            if (token !== catalogRequestToken) return;
+            if (gErr) { catalogWarning('Unable to load customization groups: ' + gErr.message); return; }
+            const selections = [];
+            for (const group of groups || []) {
+              const { data: choices, error: cErr } = await supabase.from('store_option_choices')
+                .select('*').eq('group_id', group.id).eq('active', true).order('sort_order');
+              if (token !== catalogRequestToken) return;
+              if (cErr) { catalogWarning('Unable to load ' + group.name + ': ' + cErr.message); return; }
+              const label = document.createElement('label');
+              label.className = 'd-block my-2';
+              label.textContent = group.name + (group.required ? ' *' : '');
+              const select = document.createElement('select');
+              select.className = 'form-select';
+              select.add(new Option(group.required ? 'Select an option' : 'None', ''));
+              for (const choice of choices || []) {
+                const extra = Number(choice.price_delta) || 0;
+                select.add(new Option(choice.name + (extra ? ' (' + currency.format(extra) + ')' : ''), choice.id));
+              }
+              label.append(select);
+              dynamicPanel.append(label);
+              selections.push({group, choices: choices || [], select, label});
+            }
+            // Existing hat rule: Snapback does not require a size.
+            const hatType = selections.find(x => /hat type|^type$/i.test(x.group.name));
+            const hatSize = selections.find(x => /hat size|^size$/i.test(x.group.name));
+            if (normalized === 'hat' && hatType && hatSize) {
+              const updateSize = () => {
+                const choice = hatType.choices.find(c => c.id === hatType.select.value);
+                const snapback = String(choice?.name || '').replace(/\s+/g, '').toLowerCase() === 'snapback';
+                hatSize.label.style.display = snapback ? 'none' : '';
+                hatSize.select.disabled = snapback;
+                if (snapback) hatSize.select.value = '';
+              };
+              hatType.select.addEventListener('change', updateSize);
+              updateSize();
+            }
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'btn btn-success mt-2';
+            add.textContent = catalogPreview ? 'Preview only — checkout disabled' : 'Add ' + product.name + ' to cart';
+            add.disabled = catalogPreview;
+            add.addEventListener('click', () => {
+              if (!requirePersonalInfo()) return;
+              const options = {};
+              let price = Number(product.price);
+              for (const {group, choices, select} of selections) {
+                if (select.disabled) continue;
+                const choice = choices.find(c => String(c.id) === select.value);
+                if (group.required && !choice) { alert('Please select ' + group.name); select.focus(); return; }
+                if (choice) { options[group.name] = choice.name; price += Number(choice.price_delta) || 0; }
+              }
+              if (!Number.isFinite(price) || price <= 0) { alert('Invalid product price'); return; }
+              const item = {type: product.name, productId: product.id, productOptions: options, price: Math.round(price * 100) / 100};
+              cart.push(item);
+              const li = document.createElement('li');
+              li.className = 'list-group-item d-flex justify-content-between align-items-start';
+              const desc = document.createElement('div');
+              desc.textContent = product.name + ' · ' + Object.entries(options).map(([k,v]) => k + ': ' + v).join(', ') + ' · ' + currency.format(item.price);
+              const remove = document.createElement('button');
+              remove.type = 'button'; remove.className = 'btn btn-sm btn-danger ms-2'; remove.textContent = 'X';
+              remove.addEventListener('click', () => { const i = cart.indexOf(item); if (i >= 0) cart.splice(i, 1); li.remove(); updateCartTotal(); if (!cart.length) document.getElementById('cartSection').style.display = 'none'; });
+              li.append(desc, remove);
+              document.getElementById('cartList').append(li);
+              document.getElementById('cartSection').style.display = 'block';
+              updateCartTotal(); hideDynamicProduct();
+            });
+            dynamicPanel.append(add);
+          });
+          list.append(button);
         }
-        if(!products?.length){
-          console.warn('No active products were returned from store_products. Check active flag and public SELECT permissions.');
-          showCatalogMessage('No additional active products were returned. Check the Product Manager visibility setting.');
-          return;
-        }
-        products.sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0));
-        const list=document.getElementById('mainProductButtons');const panel=dynamicPanel;
-        for(const product of products){const button=document.createElement('button');button.type='button';button.className='btn dynamic-product-btn';button.textContent=product.name;button.title=currency.format(product.price);button.onclick=async()=>{
-          document.getElementById('graphicsSection').style.display='none';
-          document.getElementById('hatSection').style.display='none';
-          document.getElementById('pantsSection').style.display='none';
-          clearGraphicsSelections();clearHatSelections();clearPantsSelections();
-          hideDynamicProduct();
-          button.classList.add('selected');
-          panel.style.display='block';
-          legacyAddButton.style.display='none';
-          panel.replaceChildren();const heading=document.createElement('h4');heading.textContent=product.name;panel.append(heading);
-          if(product.image_url){const img=document.createElement('img');img.src=product.image_url;img.alt=product.name;img.style.cssText='max-width:180px;max-height:180px;object-fit:contain';panel.append(img)}
-          const {data:groups,error:gErr}=await supabase.from('store_option_groups').select('*').eq('product_id',product.id).eq('active',true).order('sort_order');if(gErr){alert(gErr.message);return}
-          const selections=[];
-          for(const group of groups){const {data:choices,error:cErr}=await supabase.from('store_option_choices').select('*').eq('group_id',group.id).eq('active',true).order('sort_order');if(cErr){alert(cErr.message);return}
-            const label=document.createElement('label');label.className='d-block my-2';label.textContent=group.name+(group.required?' *':'');const select=document.createElement('select');select.className='form-select';const blank=new Option(group.required?'Select an option':'None','');select.add(blank);for(const choice of choices)select.add(new Option(choice.name+(Number(choice.price_delta)?' ('+currency.format(choice.price_delta)+')':''),choice.id));label.append(select);panel.append(label);selections.push({group,choices,select});}
-          const add=document.createElement('button');add.type='button';add.className='btn btn-success mt-2';add.textContent='Add '+product.name+' to cart';add.onclick=()=>{
-            if(!requirePersonalInfo())return;
-            const options={};let price=Number(product.price);
-            for(const {group,choices,select} of selections){const choice=choices.find(c=>c.id===select.value);if(group.required&&!choice){alert('Please select '+group.name);return}if(choice){options[group.name]=choice.name;price+=Number(choice.price_delta)||0}}
-            if(price<=0){alert('Invalid product price');return}
-            const item={type:product.name,productId:product.id,productOptions:options,price:Math.round(price*100)/100};cart.push(item);
-            const li=document.createElement('li');li.className='list-group-item d-flex justify-content-between align-items-start';const desc=document.createElement('div');desc.textContent=product.name+' · '+Object.entries(options).map(([k,v])=>k+': '+v).join(', ')+' · '+currency.format(item.price);const remove=document.createElement('button');remove.type='button';remove.className='btn btn-sm btn-danger ms-2';remove.textContent='X';remove.onclick=()=>{cart.splice(cart.indexOf(item),1);li.remove();updateCartTotal();if(!cart.length)document.getElementById('cartSection').style.display='none'};li.append(desc,remove);document.getElementById('cartList').append(li);document.getElementById('cartSection').style.display='block';updateCartTotal();panel.replaceChildren();panel.style.display='none';button.classList.remove('selected');};panel.append(add);
-        };list.append(button)}
       }
       await loadDynamicProducts();
 
@@ -1059,6 +1141,7 @@
         paypal.Buttons({
           style: { layout: 'vertical', shape: 'rect', label: 'pay' },
           createOrder: (data, actions) => {
+            if (catalogPreview) { alert('Catalog preview: checkout is disabled.'); throw new Error('Preview checkout disabled'); }
             if (!requirePersonalInfo()) throw new Error('Missing personal info');
             if (document.getElementById('cartList').children.length === 0) { alert('Your cart is empty.'); throw new Error('Empty cart'); }
 
